@@ -1,0 +1,66 @@
+{
+  "dataset_path": "/app/data/intent_seed_dataset.csv",
+  "row_count": 41,
+  "train_rows": 32,
+  "test_rows": 9,
+  "intents": [
+    "complaint",
+    "customer_lookup",
+    "farewell",
+    "greeting",
+    "order_status",
+    "product_inquiry"
+  ],
+  "accuracy": 0.5556,
+  "classification_report": {
+    "complaint": {
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1-score": 0.5,
+      "support": 2.0
+    },
+    "customer_lookup": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 1.0
+    },
+    "farewell": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 1.0
+    },
+    "greeting": {
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1-score": 0.6666666666666666,
+      "support": 2.0
+    },
+    "order_status": {
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1-score": 0.6666666666666666,
+      "support": 2.0
+    },
+    "product_inquiry": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 1.0
+    },
+    "accuracy": 0.5555555555555556,
+    "macro avg": {
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1-score": 0.47222222222222215,
+      "support": 9.0
+    },
+    "weighted avg": {
+      "precision": 0.5555555555555556,
+      "recall": 0.5555555555555556,
+      "f1-score": 0.5185185185185185,
+      "support": 9.0
+    }
+  }
+}

@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+:root {
+  --font-sans-stack: "Avenir Next", "Montserrat", "Segoe UI", sans-serif;
+  --font-mono-stack: "IBM Plex Mono", "SFMono-Regular", "Cascadia Code", monospace;
+  --color-ink: #0d1b1e;
+  --color-paper: #f7f2e8;
+  --color-panel: rgba(14, 31, 34, 0.82);
+  --color-panel-strong: rgba(19, 44, 49, 0.94);
+  --color-accent: #d9ff66;
+  --color-accent-soft: #f08d49;
+  --color-muted: #8cb0ae;
+  --color-line: rgba(199, 231, 228, 0.16);
+  --background: radial-gradient(circle at top left, rgba(240, 141, 73, 0.22), transparent 28%),
+    radial-gradient(circle at top right, rgba(217, 255, 102, 0.16), transparent 24%),
+    linear-gradient(145deg, #102428 0%, #0d1b1e 48%, #132f34 100%);
+  --foreground: var(--color-paper);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans-stack);
+  --font-mono: var(--font-mono-stack);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans-stack);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(217, 255, 102, 0.28);
+  color: var(--color-paper);
+}
+
+.glass-panel {
+  background: linear-gradient(180deg, rgba(22, 50, 55, 0.74), rgba(13, 27, 30, 0.88));
+  backdrop-filter: blur(18px);
+}
+
+.dashboard-grid {
+  background-image: linear-gradient(rgba(199, 231, 228, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(199, 231, 228, 0.05) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.section-title {
+  font-family: var(--font-mono-stack);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.stat-card {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 22px 40px rgba(1, 9, 11, 0.28);
+}

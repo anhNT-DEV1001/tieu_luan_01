@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Healthcare Booking Flow</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="page-shell">
+    <header class="hero">
+      <div>
+        <p class="eyebrow">Healthcare Microservices Demo</p>
+        <h1>Dat lich kham qua API gateway</h1>
+        <p class="hero-copy">
+          Giao dien nay goi duy nhat qua gateway, sau do gateway proxy request den
+          patient-service, doctor-service va appointment-service.
+        </p>
+      </div>
+      <div class="hero-status">
+        <div class="status-card">
+          <span class="status-label">Gateway</span>
+          <strong id="gateway-status">Ready</strong>
+          <p>Frontend + reverse proxy tai cung mot diem vao.</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="dashboard">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>1. Tao benh nhan</h2>
+          <button id="refresh-patients" class="ghost-button" type="button">Refresh</button>
+        </div>
+        <form id="patient-form" class="stack">
+          <label>
+            <span>Ho va ten</span>
+            <input name="full_name" placeholder="Nguyen Van A" required>
+          </label>
+          <label>
+            <span>So dien thoai</span>
+            <input name="phone" placeholder="0901234567" required>
+          </label>
+          <button type="submit">Tao patient</button>
+        </form>
+        <div id="patients-empty" class="empty-state">Chua co patient nao.</div>
+        <div id="patients-list" class="card-list"></div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>2. Tao bac si</h2>
+          <button id="refresh-doctors" class="ghost-button" type="button">Refresh</button>
+        </div>
+        <form id="doctor-form" class="stack">
+          <label>
+            <span>Ho va ten</span>
+            <input name="full_name" placeholder="Tran Thi B" required>
+          </label>
+          <label>
+            <span>Chuyen khoa</span>
+            <input name="specialty" placeholder="Cardiology" required>
+          </label>
+          <button type="submit">Tao doctor</button>
+        </form>
+        <div id="doctors-empty" class="empty-state">Chua co doctor nao.</div>
+        <div id="doctors-list" class="card-list"></div>
+      </section>
+
+      <section class="panel panel-wide">
+        <div class="panel-head">
+          <h2>3. Dat lich kham</h2>
+          <button id="refresh-appointments" class="ghost-button" type="button">Refresh</button>
+        </div>
+        <form id="appointment-form" class="grid-form">
+          <label>
+            <span>Chon patient</span>
+            <select id="patient-select" name="patient_id" required></select>
+          </label>
+          <label>
+            <span>Chon doctor</span>
+            <select id="doctor-select" name="doctor_id" required></select>
+          </label>
+          <label class="wide">
+            <span>Appointment time (UTC)</span>
+            <input id="appointment-time" name="appointment_time" type="datetime-local" required>
+          </label>
+          <button type="submit">Book appointment</button>
+        </form>
+
+        <div class="timeline-head">
+          <h3>Danh sach lich hen</h3>
+          <p>Khung gio trung nhau cua cung mot doctor se bi tu choi.</p>
+        </div>
+        <div id="appointments-empty" class="empty-state">Chua co appointment nao.</div>
+        <div id="appointments-list" class="timeline"></div>
+      </section>
+
+      <section class="panel panel-log">
+        <div class="panel-head">
+          <h2>Activity</h2>
+          <button id="clear-log" class="ghost-button" type="button">Clear</button>
+        </div>
+        <div id="message-log" class="message-log"></div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

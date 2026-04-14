@@ -1,0 +1,166 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ecommerce-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-ecommerce_demo}
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      - "${DB_EXPOSE_PORT:-5433}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+  
+  gateway:
+    build:
+      context: ./e-commerce-server/gateway
+    container_name: ecommerce-gateway
+    command: sh /app/scripts/entrypoint.sh
+    environment:
+      SERVICE_NAME: gateway
+      PORT: 8000
+      DEBUG: 1
+      ALLOWED_HOSTS: "*"
+      USER_SERVICE_URL: http://ecommerce-user-service:8001/api/users/
+      PRODUCT_SERVICE_URL: http://ecommerce-product-service:8002/api/products/
+      ORDER_SERVICE_URL: http://ecommerce-order-service:8003/api/orders/
+      PAYMENT_SERVICE_URL: http://ecommerce-payment-service:8004/api/payments/
+      AI_SERVICE_URL: http://ecommerce-ai-service:8005/api/ai/
+    ports:
+      - "${GATEWAY_PORT:-8000}:8000"
+    volumes:
+      - ./e-commerce-server/gateway:/app
+      - ./e-commerce-server/scripts:/app/scripts
+    depends_on:
+      - user_service
+      - product_service
+      - order_service
+      - payment_service
+      - ai_service
+
+  ai_service:
+    build:
+      context: ./e-commerce-server/ai_service
+    container_name: ecommerce-ai-service
+    environment:
+      SERVICE_NAME: ai_service
+      PORT: 8005
+      DEBUG: 1
+    ports:
+      - "${AI_PORT:-8005}:8005"
+    volumes:
+      - ./e-commerce-server/ai_service:/app
+
+  client:
+    build:
+      context: ./e-commerce-client
+    container_name: ecommerce-client
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      ECOMMERCE_API_BASE_URL: http://ecommerce-gateway:8000
+    ports:
+      - "${CLIENT_PORT:-3000}:3000"
+    depends_on:
+      - gateway
+
+  user_service:
+    build:
+      context: ./e-commerce-server/user_service
+    container_name: ecommerce-user-service
+    command: sh /app/scripts/entrypoint.sh
+    environment:
+      SERVICE_NAME: user_service
+      PORT: 8001
+      DEBUG: 1
+      ALLOWED_HOSTS: "*"
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-ecommerce_demo}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_SCHEMA: user_service
+      TIME_ZONE: Asia/Ho_Chi_Minh
+    volumes:
+      - ./e-commerce-server/user_service:/app
+      - ./e-commerce-server/scripts:/app/scripts
+    depends_on:
+      - postgres
+
+  product_service:
+    build:
+      context: ./e-commerce-server/product_service
+    container_name: ecommerce-product-service
+    command: sh /app/scripts/entrypoint.sh
+    environment:
+      SERVICE_NAME: product_service
+      PORT: 8002
+      DEBUG: 1
+      ALLOWED_HOSTS: "*"
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-ecommerce_demo}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_SCHEMA: product_service
+      TIME_ZONE: Asia/Ho_Chi_Minh
+    volumes:
+      - ./e-commerce-server/product_service:/app
+      - ./e-commerce-server/scripts:/app/scripts
+    depends_on:
+      - postgres
+
+  order_service:
+    build:
+      context: ./e-commerce-server/order_service
+    container_name: ecommerce-order-service
+    command: sh /app/scripts/entrypoint.sh
+    environment:
+      SERVICE_NAME: order_service
+      PORT: 8003
+      DEBUG: 1
+      ALLOWED_HOSTS: "*"
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-ecommerce_demo}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_SCHEMA: order_service
+      TIME_ZONE: Asia/Ho_Chi_Minh
+      USER_SERVICE_URL: http://ecommerce-user-service:8001/api/users/
+      PRODUCT_SERVICE_URL: http://ecommerce-product-service:8002/api/products/
+    volumes:
+      - ./e-commerce-server/order_service:/app
+      - ./e-commerce-server/scripts:/app/scripts
+    depends_on:
+      - postgres
+      - user_service
+      - product_service
+
+  payment_service:
+    build:
+      context: ./e-commerce-server/payment_service
+    container_name: ecommerce-payment-service
+    command: sh /app/scripts/entrypoint.sh
+    environment:
+      SERVICE_NAME: payment_service
+      PORT: 8004
+      DEBUG: 1
+      ALLOWED_HOSTS: "*"
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-ecommerce_demo}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_SCHEMA: payment_service
+      TIME_ZONE: Asia/Ho_Chi_Minh
+      ORDER_SERVICE_URL: http://ecommerce-order-service:8003/api/orders/
+    volumes:
+      - ./e-commerce-server/payment_service:/app
+      - ./e-commerce-server/scripts:/app/scripts
+    depends_on:
+      - postgres
+      - order_service
+
+volumes:
+  postgres_data:

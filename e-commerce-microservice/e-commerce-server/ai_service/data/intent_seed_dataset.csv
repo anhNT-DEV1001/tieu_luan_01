@@ -1,0 +1,42 @@
+text,intent
+hi,greeting
+hello,greeting
+hey there,greeting
+good morning,greeting
+good evening,greeting
+xin chao,greeting
+chao shop,greeting
+shop oi,greeting
+where is my order,order_status
+order status,order_status
+track my package,order_status
+has it shipped yet,order_status
+kiem tra don hang,order_status
+don hang cua toi den dau roi,order_status
+tinh trang giao hang the nao,order_status
+what do you sell,product_inquiry
+show me products,product_inquiry
+i want to buy something,product_inquiry
+categories,product_inquiry
+co san pham nao dang ban chay,product_inquiry
+tim san pham dien tu,product_inquiry
+gia san pham nay bao nhieu,product_inquiry
+i have a problem,complaint
+this is broken,complaint
+i am very angry,complaint
+terrible service,complaint
+complaint,complaint
+toi muon khieu nai,complaint
+san pham bi loi,complaint
+ho tro giup toi voi,complaint
+find customer by email,customer_lookup
+show customer profile,customer_lookup
+lookup user account,customer_lookup
+tim khach hang theo email,customer_lookup
+tra cuu thong tin khach hang,customer_lookup
+kiem tra user nay,customer_lookup
+bye,farewell
+see you later,farewell
+goodbye,farewell
+tam biet,farewell
+hen gap lai,farewell

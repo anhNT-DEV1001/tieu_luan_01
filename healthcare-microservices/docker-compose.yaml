@@ -1,0 +1,70 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: healthcare-postgres
+    environment:
+      POSTGRES_DB: healthcare_db
+      POSTGRES_USER: healthcare_user
+      POSTGRES_PASSWORD: healthcare_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  patient-service:
+    build: ./patient-service
+    container_name: patient-service
+    command: sh /app/entrypoint.sh
+    volumes:
+      - ./patient-service:/app
+    depends_on:
+      - postgres
+    environment:
+      DB_NAME: healthcare_db
+      DB_USER: healthcare_user
+      DB_PASSWORD: healthcare_pass
+      DB_HOST: postgres
+      DB_PORT: 5432
+
+  doctor-service:
+    build: ./doctor-service
+    container_name: doctor-service
+    command: sh /app/entrypoint.sh
+    volumes:
+      - ./doctor-service:/app
+    depends_on:
+      - postgres
+    environment:
+      DB_NAME: healthcare_db
+      DB_USER: healthcare_user
+      DB_PASSWORD: healthcare_pass
+      DB_HOST: postgres
+      DB_PORT: 5432
+
+  appointment-service:
+    build: ./appointment-service
+    container_name: appointment-service
+    command: sh /app/entrypoint.sh
+    volumes:
+      - ./appointment-service:/app
+    depends_on:
+      - postgres
+    environment:
+      DB_NAME: healthcare_db
+      DB_USER: healthcare_user
+      DB_PASSWORD: healthcare_pass
+      DB_HOST: postgres
+      DB_PORT: 5432
+      PATIENT_SERVICE_URL: http://patient-service:8000
+      DOCTOR_SERVICE_URL: http://doctor-service:8000
+
+  gateway:
+    build: ./gateway
+    container_name: healthcare-gateway
+    depends_on:
+      - patient-service
+      - doctor-service
+      - appointment-service
+    ports:
+      - "8080:80"
+
+volumes:
+  postgres_data:
