@@ -1,0 +1,298 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage[T5]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage{microtype}
+\usepackage{setspace}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  urlcolor=blue!50!black,
+  pdftitle={Bao cao du an e-commerce-microservice},
+  pdfauthor={OpenAI Codex}
+}
+
+\lstdefinestyle{code}{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{black!20},
+  backgroundcolor=\color{black!2},
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false
+}
+
+\setstretch{1.2}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{E-commerce Microservice}
+\lhead{Bao cao ky thuat}
+\cfoot{\thepage}
+
+\titleformat{\section}{\large\bfseries}{\thesection.}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection.}{0.6em}{}
+
+\title{\textbf{BÁO CÁO DỰ ÁN E-COMMERCE MICROSERVICE}\\[4pt]
+\large Phân tích use-case, thiết kế hệ thống, hiện thực mã nguồn và kết quả triển khai}
+\author{}
+\date{\today}
+
+\begin{document}
+\begin{titlepage}
+    \centering
+    {\Large \textbf{BÁO CÁO ĐỒ ÁN / TIỂU LUẬN}\par}
+    \vspace{1.5cm}
+    {\LARGE \textbf{DỰ ÁN E-COMMERCE MICROSERVICE}\par}
+    \vspace{0.8cm}
+    {\large Phân tích use-case, thiết kế hệ thống, hiện thực mã nguồn và kết quả triển khai\par}
+    \vfill
+    \begin{flushleft}
+        \textbf{Họ và tên:} Nguyễn Tuấn Anh\\[0.4cm]
+        \textbf{Lớp:} E22CNPM-01\\[0.4cm]
+        \textbf{Mã sinh viên:} B22DCDT019\\[0.4cm]
+        \textbf{Đề tài:} [E-commerce Microservice]
+    \end{flushleft}
+    \vfill
+    {\large \today\par}
+\end{titlepage}
+
+\maketitle
+\thispagestyle{fancy}
+
+\begin{abstract}
+Tài liệu này trình bày báo cáo kỹ thuật cho dự án \texttt{e-commerce-microservice}. Nội dung đi từ bối cảnh nghiệp vụ, use-case cốt lõi, kiến trúc microservice, cấu trúc hiện thực trong mã nguồn đến kết quả triển khai bằng Docker Compose. Hệ thống mô phỏng một nền tảng thương mại điện tử gồm quản lý người dùng, danh mục sản phẩm, đơn hàng, thanh toán, giao diện điều hành và một dịch vụ AI hỗ trợ truy vấn dữ liệu nghiệp vụ.
+\end{abstract}
+
+\section{Giới thiệu dự án và bài toán}
+Trong bối cảnh chuyển đổi số, các hệ thống thương mại điện tử thường phải xử lý nhiều miền nghiệp vụ độc lập như khách hàng, sản phẩm, đơn hàng, thanh toán và phân tích hỗ trợ ra quyết định. Nếu tất cả được đặt trong một ứng dụng nguyên khối, phạm vi thay đổi sẽ ngày càng lớn, việc bảo trì khó khăn và năng lực mở rộng bị hạn chế.
+
+Dự án \texttt{e-commerce-microservice} được xây dựng để mô phỏng một hệ thống e-commerce hiện đại theo hướng microservice. Mục tiêu của dự án không chỉ là cung cấp API CRUD đơn thuần mà còn thể hiện rõ cách các dịch vụ giao tiếp với nhau thông qua gateway, cách frontend tiêu thụ dữ liệu hợp nhất, và cách bổ sung một thành phần AI để hỗ trợ tra cứu thông tin nghiệp vụ.
+
+\subsection{Use-case chính của hệ thống}
+Hệ thống xoay quanh các kịch bản nghiệp vụ sau:
+\begin{itemize}[leftmargin=1.5em]
+  \item Quản trị viên hoặc nhân viên xem nhanh tình trạng toàn hệ thống qua dashboard.
+  \item Người dùng được quản lý theo vai trò \texttt{admin}, \texttt{customer}, \texttt{staff}.
+  \item Sản phẩm được lưu trong catalog với thông tin giá, giảm giá, tồn kho, đánh giá và thuộc tính mở rộng.
+  \item Đơn hàng được tạo từ dữ liệu người dùng và danh sách sản phẩm, trong đó \texttt{order\_service} phải kiểm tra tính hợp lệ của người dùng và sản phẩm trước khi ghi dữ liệu.
+  \item Thanh toán được tạo dựa trên đơn hàng đã tồn tại, do \texttt{payment\_service} xác nhận từ \texttt{order\_service}.
+  \item Dashboard và chatbot AI cho phép quan sát nhanh dữ liệu nghiệp vụ, truy vấn đơn hàng, sản phẩm và khách hàng.
+\end{itemize}
+
+\section{Mục tiêu thiết kế}
+Các mục tiêu thiết kế chính của dự án gồm:
+\begin{itemize}[leftmargin=1.5em]
+  \item Tách biệt rõ từng miền nghiệp vụ thành các service độc lập.
+  \item Sử dụng API gateway làm điểm vào duy nhất cho frontend.
+  \item Cho phép triển khai toàn bộ hệ thống bằng một lệnh \texttt{docker compose up --build}.
+  \item Duy trì khả năng quan sát qua các endpoint tổng hợp như \texttt{/summary/}.
+  \item Kết hợp frontend Next.js và backend Django/FastAPI theo một luồng end-to-end dễ demo.
+\end{itemize}
+
+\section{Kiến trúc tổng thể}
+\subsection{Thành phần hệ thống}
+Theo cấu hình trong \texttt{docker-compose.yaml}, hệ thống gồm bảy thành phần:
+
+\begin{longtable}{p{3.2cm}p{10.1cm}}
+\toprule
+\textbf{Thành phần} & \textbf{Vai trò} \\
+\midrule
+\texttt{client} & Frontend Next.js, hiển thị dashboard, tìm kiếm sản phẩm, tạo đơn hàng và tạo thanh toán. \\
+\texttt{gateway} & API gateway bằng Django, nhận request từ client và proxy tới các service nghiệp vụ. \\
+\texttt{user\_service} & Quản lý hồ sơ người dùng, phân vai trò, đăng nhập demo và thống kê người dùng. \\
+\texttt{product\_service} & Quản lý catalog sản phẩm, hỗ trợ lọc theo danh mục và tổng hợp dữ liệu catalog. \\
+\texttt{order\_service} & Tạo đơn hàng, hydrate thông tin người dùng và sản phẩm, tính subtotal, shipping fee và tổng tiền. \\
+\texttt{payment\_service} & Tạo bản ghi thanh toán cho đơn hàng, sinh mã giao dịch và thống kê giá trị đã xử lý. \\
+\texttt{ai\_service} & Dịch vụ FastAPI cho chatbot intent classification và truy vấn dữ liệu dạng retrieval. \\
+\texttt{postgres} & PostgreSQL dùng chung một instance, mỗi service dùng schema riêng. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Luồng giao tiếp}
+Luồng request chính của hệ thống được tổ chức như sau:
+\begin{enumerate}[leftmargin=1.5em]
+  \item Trình duyệt truy cập frontend tại cổng \texttt{3000}.
+  \item Frontend gửi yêu cầu qua route handler nội bộ \texttt{/api/backend/*}.
+  \item Route handler tiếp tục chuyển tiếp sang \texttt{gateway}.
+  \item Gateway dựa trên tên service trong URL để chuyển tiếp tới \texttt{user\_service}, \texttt{product\_service}, \texttt{order\_service}, \texttt{payment\_service} hoặc \texttt{ai\_service}.
+  \item Các service nghiệp vụ giao tiếp đồng bộ với nhau bằng HTTP khi cần xác thực dữ liệu liên service.
+  \item Dữ liệu cuối cùng được lưu trong PostgreSQL.
+\end{enumerate}
+
+\section{Thiết kế nghiệp vụ và dữ liệu}
+\subsection{Thiết kế người dùng}
+\texttt{user\_service} quản lý thực thể \texttt{UserProfile}. Mô hình dữ liệu gồm các thuộc tính nghiệp vụ cơ bản như họ tên, email, số điện thoại, vai trò, trạng thái, điểm loyalty, địa chỉ và metadata mở rộng. Việc dùng \texttt{role} theo \texttt{TextChoices} giúp chuẩn hóa các nhóm người dùng trong toàn hệ thống.
+
+\subsection{Thiết kế sản phẩm}
+\texttt{product\_service} lưu thực thể \texttt{Product} với cấu trúc giàu thuộc tính: SKU, danh mục, thương hiệu, giá, giá giảm, tồn kho, an toàn tồn kho, kích thước, xuất xứ, bảo hành, tags, attributes và thumbnail. Thiết kế này thể hiện tư duy catalog linh hoạt, phù hợp với bài toán thương mại điện tử.
+
+\subsection{Thiết kế đơn hàng}
+\texttt{order\_service} sử dụng hai bảng:
+\begin{itemize}[leftmargin=1.5em]
+  \item \texttt{Order}: lưu thông tin khách hàng, địa chỉ giao, trạng thái, subtotal, phí vận chuyển, tổng tiền và metadata.
+  \item \texttt{OrderItem}: lưu snapshot của sản phẩm tại thời điểm mua, bao gồm tên, SKU, số lượng, đơn giá và thành tiền.
+\end{itemize}
+
+Việc lưu \texttt{product\_snapshot} là quyết định thiết kế quan trọng vì giúp giữ nguyên dấu vết nghiệp vụ ngay cả khi catalog thay đổi sau đó.
+
+\subsection{Thiết kế thanh toán}
+\texttt{payment\_service} lưu thực thể \texttt{Payment} với các trường \texttt{order\_id}, \texttt{amount}, \texttt{method}, \texttt{status}, \texttt{transaction\_code}, \texttt{gateway\_response} và \texttt{paid\_at}. Thiết kế này mô phỏng gần với hệ thống thực tế ở mức demo, đặc biệt là trường \texttt{gateway\_response} cho phép giữ metadata từ cổng thanh toán.
+
+\section{Thiết kế mã nguồn}
+\subsection{Gateway làm điểm vào duy nhất}
+Gateway được cài đặt bằng Django view đơn giản nhưng hiệu quả. Hàm \texttt{proxy\_router} nhận tham số service, kiểm tra xem service có hợp lệ không, sau đó dựng URL upstream và chuyển tiếp nguyên phương thức HTTP, header và body tới service đích.
+
+\begin{lstlisting}[style=code,language=Python,caption={Ý tưởng proxy tại gateway}]
+def proxy_router(request, service, subpath=""):
+    if service not in settings.SERVICE_URLS:
+        return JsonResponse({"error": "Unsupported service"}, status=404)
+
+    upstream = urljoin(settings.SERVICE_URLS[service], subpath.lstrip("/"))
+    response = requests.request(
+        method=request.method,
+        url=upstream,
+        headers=headers,
+        data=request.body or None,
+        timeout=20,
+    )
+    return HttpResponse(content=response.content, status=response.status_code)
+\end{lstlisting}
+
+Thiết kế này đem lại ba lợi ích:
+\begin{itemize}[leftmargin=1.5em]
+  \item Frontend chỉ cần biết một backend base URL.
+  \item Có thể thay đổi vị trí hoặc số lượng service mà không phải sửa logic client nhiều nơi.
+  \item Thuận tiện để chèn thêm xác thực, logging hay rate limiting trong tương lai.
+\end{itemize}
+
+\subsection{Tạo đơn hàng bằng kiểm tra liên service}
+Phần quan trọng nhất của \texttt{order\_service} là luồng tạo đơn hàng. Khi nhận yêu cầu mới, service:
+\begin{enumerate}[leftmargin=1.5em]
+  \item Gọi \texttt{user\_service} để kiểm tra \texttt{user\_id}.
+  \item Duyệt từng item và gọi \texttt{product\_service} để lấy dữ liệu sản phẩm.
+  \item Tính \texttt{line\_total}, \texttt{subtotal}, \texttt{shipping\_fee} và \texttt{total\_amount}.
+  \item Tạo \texttt{Order} trước, sau đó \texttt{bulk\_create} các \texttt{OrderItem}.
+\end{enumerate}
+
+\begin{lstlisting}[style=code,language=Python,caption={Rút gọn logic tạo đơn hàng}]
+for item in items_payload:
+    product = _fetch_product(item["product_id"])
+    quantity = int(item["quantity"])
+    unit_price = Decimal(str(product["current_price"]))
+    line_total = unit_price * quantity
+    subtotal += line_total
+
+order = Order.objects.create(
+    user_id=user["id"],
+    subtotal_amount=subtotal,
+    shipping_fee=shipping_fee,
+    total_amount=subtotal + shipping_fee,
+)
+\end{lstlisting}
+
+Điểm đáng chú ý là service không dùng foreign key xuyên service. Tính đúng đắn nghiệp vụ được đảm bảo bằng HTTP call ở thời điểm xử lý.
+
+\subsection{Thanh toán dựa trên đơn hàng hiện có}
+\texttt{payment\_service} áp dụng cách tiếp cận tương tự. Trước khi tạo thanh toán, hệ thống gọi \texttt{order\_service} để lấy dữ liệu đơn hàng. Sau đó payment được sinh với \texttt{transaction\_code} ngẫu nhiên và metadata trả về từ gateway demo.
+
+\begin{lstlisting}[style=code,language=Python,caption={Tạo thanh toán từ đơn hàng}]
+order = _fetch_order(payload["order_id"])
+payment = Payment.objects.create(
+    order_id=order["id"],
+    payer_name=order["customer_name"],
+    amount=order["total_amount"],
+    method=payload.get("method", Payment.PaymentMethod.MOMO),
+    transaction_code=uuid.uuid4().hex[:16].upper(),
+)
+\end{lstlisting}
+
+\subsection{Frontend Next.js và lớp proxy nội bộ}
+Frontend được viết bằng Next.js. Một route handler tại \texttt{src/app/api/backend/[...path]/route.ts} đóng vai trò proxy lớp thứ hai. Thành phần này rất hữu ích khi frontend cần gọi backend từ cả server side lẫn client side mà vẫn giữ cùng một domain logic.
+
+\begin{lstlisting}[style=code,language=TypeScript,caption={Proxy nội bộ trong Next.js}]
+const backendBaseUrl =
+  process.env.ECOMMERCE_API_BASE_URL?.replace(/\/$/, "")
+  ?? "http://127.0.0.1:8000";
+
+const target = `${backendBaseUrl}/api/${backendPath}${search}`;
+const response = await fetch(target, {
+  method: request.method,
+  body: request.method === "GET" ? undefined : await request.text(),
+  cache: "no-store",
+});
+\end{lstlisting}
+
+Dashboard phía client đồng thời tải nhiều nguồn dữ liệu bằng \texttt{Promise.all}, ví dụ user summary, product summary, order summary và payment summary. Đây là thiết kế hợp lý để giảm thời gian chờ giao diện.
+
+\subsection{Dịch vụ AI hỗ trợ truy vấn nghiệp vụ}
+Ngoài các service CRUD, dự án còn có \texttt{ai\_service} viết bằng FastAPI. Thành phần này:
+\begin{itemize}[leftmargin=1.5em]
+  \item Nạp mô hình intent classification và vectorizer từ file pickle.
+  \item Kết hợp rule-based intent detection với fallback model.
+  \item Thực hiện retrieval cho dữ liệu product, order và customer.
+  \item Trả về phản hồi có \texttt{sources} để giải thích kết quả.
+\end{itemize}
+
+Đây là điểm mở rộng đáng giá vì thể hiện xu hướng tích hợp AI như một service độc lập thay vì nhúng trực tiếp vào backend nghiệp vụ.
+
+\section{Triển khai và vận hành}
+\subsection{Môi trường triển khai}
+Dự án được đóng gói bằng Docker Compose. Các cổng mặc định:
+\begin{itemize}[leftmargin=1.5em]
+  \item Client: \texttt{http://localhost:3000}
+  \item Gateway: \texttt{http://localhost:8000}
+  \item PostgreSQL: \texttt{localhost:5433}
+\end{itemize}
+
+Lệnh chạy chuẩn:
+\begin{lstlisting}[style=code,basicstyle=\ttfamily\small]
+cd e-commerce-microservice
+docker compose up --build
+\end{lstlisting}
+
+\subsection{Kết quả đạt được}
+Từ cấu trúc hiện có trong mã nguồn, dự án đã đạt được các kết quả chính:
+\begin{itemize}[leftmargin=1.5em]
+  \item Xây dựng thành công hệ thống e-commerce đa dịch vụ với luồng nghiệp vụ xuyên service.
+  \item Chuẩn hóa điểm vào backend thông qua gateway.
+  \item Hỗ trợ dashboard quan sát dữ liệu người dùng, sản phẩm, đơn hàng và thanh toán.
+  \item Cung cấp các endpoint summary phục vụ thống kê nhanh như tổng số người dùng, doanh thu, top customer và best-selling product.
+  \item Tích hợp dịch vụ AI hỗ trợ tra cứu và chatbot nghiệp vụ.
+  \item Triển khai toàn bộ hệ thống qua một file Compose duy nhất, giảm độ phức tạp vận hành.
+\end{itemize}
+
+\subsection{Đánh giá kỹ thuật}
+Ưu điểm của dự án:
+\begin{itemize}[leftmargin=1.5em]
+  \item Phân tách service rõ ràng theo bounded context.
+  \item Dữ liệu đơn hàng và thanh toán được snapshot hóa hợp lý.
+  \item Luồng frontend đến backend thống nhất, dễ demo và dễ mở rộng.
+  \item Có thêm service AI làm nổi bật hướng phát triển hiện đại.
+\end{itemize}
+
+Giới hạn hiện tại:
+\begin{itemize}[leftmargin=1.5em]
+  \item Các lời gọi liên service đang là đồng bộ, chưa có retry hoặc circuit breaker.
+  \item Chưa có cơ chế xác thực tập trung và phân quyền API ở gateway.
+  \item Cơ sở dữ liệu vẫn dùng chung một PostgreSQL instance, phù hợp cho demo hơn là production quy mô lớn.
+  \item Test tự động trong repository còn mỏng.
+\end{itemize}
+
+\section{Kết luận}
+\texttt{e-commerce-microservice} là một dự án minh họa tốt cho cách xây dựng nền tảng thương mại điện tử theo kiến trúc microservice với mức độ hoàn chỉnh tương đối cao cho mục đích học thuật và demo kỹ thuật. Dự án không chỉ giải quyết use-case quản lý người dùng, catalog, đơn hàng và thanh toán mà còn cho thấy cách phối hợp frontend, gateway, backend service và AI service trong cùng một hệ thống.
+
+Nếu tiếp tục phát triển, dự án có thể mở rộng theo các hướng như xác thực JWT tập trung, message broker cho event-driven workflow, observability đầy đủ, tách database riêng cho từng service và tăng độ sâu cho AI assistant.
+
+\end{document}

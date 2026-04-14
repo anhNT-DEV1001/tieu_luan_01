@@ -1,0 +1,312 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage[T5]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage{microtype}
+\usepackage{setspace}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  urlcolor=blue!50!black,
+  pdftitle={Bao cao du an healthcare-microservices},
+  pdfauthor={OpenAI Codex}
+}
+
+\lstdefinestyle{code}{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{black!20},
+  backgroundcolor=\color{black!2},
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false
+}
+
+\setstretch{1.2}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Healthcare Microservices}
+\lhead{Bao cao ky thuat}
+\cfoot{\thepage}
+
+\titleformat{\section}{\large\bfseries}{\thesection.}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection.}{0.6em}{}
+
+\title{\textbf{BÁO CÁO DỰ ÁN HEALTHCARE MICROSERVICES}\\[4pt]
+\large Phân tích use-case, kiến trúc thiết kế, hiện thực mã nguồn và kết quả triển khai}
+\author{}
+\date{\today}
+
+\begin{document}
+\begin{titlepage}
+    \centering
+    {\Large \textbf{BÁO CÁO ĐỒ ÁN / TIỂU LUẬN}\par}
+    \vspace{1.5cm}
+    {\LARGE \textbf{DỰ ÁN HEALTHCARE MICROSERVICES}\par}
+    \vspace{0.8cm}
+    {\large Phân tích use-case, kiến trúc thiết kế, hiện thực mã nguồn và kết quả triển khai\par}
+    \vfill
+    \begin{flushleft}
+        \textbf{Họ và tên:} Nguyễn Tuấn Anh\\[0.4cm]
+        \textbf{Lớp:} E22CNPM-01\\[0.4cm]
+        \textbf{Mã sinh viên:} B22DCDT019\\[0.4cm]
+        \textbf{Đề tài:} [Healthcare Microservices]
+    \end{flushleft}
+    \vfill
+    {\large \today\par}
+\end{titlepage}
+
+\maketitle
+\thispagestyle{fancy}
+
+\begin{abstract}
+Tài liệu này mô tả báo cáo kỹ thuật cho dự án \texttt{healthcare-microservices}. Dự án mô phỏng hệ thống đặt lịch khám bệnh theo hướng microservice với ba miền nghiệp vụ cốt lõi: bệnh nhân, bác sĩ và lịch hẹn. Báo cáo đi từ bối cảnh bài toán, use-case, thiết kế kiến trúc, cấu trúc code theo hướng tách lớp đến kết quả triển khai trên Docker Compose.
+\end{abstract}
+
+\section{Giới thiệu dự án và bối cảnh bài toán}
+Trong hệ thống y tế số, nghiệp vụ đặt lịch khám là một luồng cơ bản nhưng có nhiều ràng buộc dữ liệu: bệnh nhân phải tồn tại, bác sĩ phải tồn tại, thời gian hẹn phải hợp lệ và không được trùng lịch của bác sĩ. Nếu triển khai thiếu phân tách, logic nghiệp vụ dễ bị dàn trải trong controller hoặc phụ thuộc chặt giữa các module.
+
+Dự án \texttt{healthcare-microservices} được xây dựng như một mô hình tham chiếu nhỏ gọn cho bài toán này. Hệ thống dùng nhiều service độc lập để mô phỏng cách một nền tảng healthcare có thể chia tách theo domain, đồng thời vẫn cho người dùng cuối một điểm truy cập thống nhất thông qua gateway.
+
+\subsection{Use-case chính}
+Các use-case chính của hệ thống gồm:
+\begin{itemize}[leftmargin=1.5em]
+  \item Tạo hồ sơ bệnh nhân mới.
+  \item Tạo hồ sơ bác sĩ mới kèm chuyên khoa.
+  \item Tra cứu danh sách và chi tiết bệnh nhân, bác sĩ.
+  \item Đặt lịch khám cho một bệnh nhân với một bác sĩ tại thời điểm xác định.
+  \item Kiểm tra tính hợp lệ của lịch hẹn trước khi ghi nhận.
+  \item Hiển thị toàn bộ lịch hẹn trên giao diện web.
+\end{itemize}
+
+\section{Mục tiêu thiết kế}
+Hệ thống được thiết kế theo các mục tiêu sau:
+\begin{itemize}[leftmargin=1.5em]
+  \item Tách riêng ba miền nghiệp vụ \textit{patient}, \textit{doctor}, \textit{appointment}.
+  \item Tổ chức lớp ứng dụng rõ ràng theo domain, application, infrastructure và interfaces.
+  \item Tránh foreign key xuyên service; thay vào đó dùng HTTP call để xác nhận dữ liệu liên miền.
+  \item Đảm bảo business rule của lịch hẹn được đặt tại \texttt{appointment-service}.
+  \item Cung cấp giao diện web đơn giản để thao tác end-to-end.
+\end{itemize}
+
+\section{Kiến trúc hệ thống}
+\subsection{Các thành phần chính}
+Theo file \texttt{docker-compose.yaml}, hệ thống gồm năm thành phần:
+
+\begin{longtable}{p{3.3cm}p{10cm}}
+\toprule
+\textbf{Thành phần} & \textbf{Vai trò} \\
+\midrule
+\texttt{gateway} & Nginx gateway, vừa phục vụ frontend tĩnh vừa reverse proxy API đến các backend service. \\
+\texttt{patient-service} & Django REST service quản lý dữ liệu bệnh nhân. \\
+\texttt{doctor-service} & Django REST service quản lý dữ liệu bác sĩ và endpoint availability. \\
+\texttt{appointment-service} & Django REST service xử lý nghiệp vụ đặt lịch và kiểm tra ràng buộc. \\
+\texttt{postgres} & PostgreSQL dùng chung cho ba backend service. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Luồng xử lý}
+Luồng nghiệp vụ đặt lịch được tổ chức như sau:
+\begin{enumerate}[leftmargin=1.5em]
+  \item Người dùng truy cập giao diện web tại \texttt{http://localhost:8080}.
+  \item Frontend gửi \texttt{POST /api/patients/} hoặc \texttt{POST /api/doctors/} để tạo dữ liệu nền.
+  \item Khi người dùng đặt lịch, frontend gửi \texttt{POST /api/appointments/}.
+  \item Gateway chuyển tiếp yêu cầu tới \texttt{appointment-service}.
+  \item \texttt{appointment-service} gọi sang \texttt{patient-service} để xác nhận bệnh nhân tồn tại.
+  \item \texttt{appointment-service} gọi sang \texttt{doctor-service} để xác nhận bác sĩ tồn tại và đang available.
+  \item Nếu hợp lệ, lịch hẹn được lưu vào bảng \texttt{appointments} trong PostgreSQL.
+\end{enumerate}
+
+\section{Thiết kế miền nghiệp vụ}
+\subsection{Patient service}
+\texttt{patient-service} phụ trách quản lý thực thể bệnh nhân. Dữ liệu chính gồm:
+\begin{itemize}[leftmargin=1.5em]
+  \item \texttt{id} dạng UUID.
+  \item \texttt{full\_name}.
+  \item \texttt{phone}.
+  \item \texttt{created\_at}.
+\end{itemize}
+
+Các endpoint cốt lõi cho phép tạo, liệt kê và xem chi tiết bệnh nhân. Logic controller được giữ gọn, còn thao tác nghiệp vụ đi qua use-case và repository.
+
+\subsection{Doctor service}
+\texttt{doctor-service} quản lý thông tin bác sĩ với các trường:
+\begin{itemize}[leftmargin=1.5em]
+  \item \texttt{id} dạng UUID.
+  \item \texttt{full\_name}.
+  \item \texttt{specialty}.
+  \item \texttt{created\_at}.
+\end{itemize}
+
+Ngoài CRUD cơ bản, service này còn cung cấp endpoint \texttt{/doctors/<uuid>/availability/}. Trong phiên bản hiện tại, endpoint luôn trả về \texttt{available = true} nếu bác sĩ tồn tại và tham số thời gian hợp lệ. Đây là giả lập hợp lý cho một demo nhằm cho thấy cơ chế giao tiếp liên service.
+
+\subsection{Appointment service}
+\texttt{appointment-service} là trung tâm nghiệp vụ của dự án. Bảng \texttt{appointments} chứa:
+\begin{itemize}[leftmargin=1.5em]
+  \item \texttt{id} dạng UUID.
+  \item \texttt{patient\_id}.
+  \item \texttt{doctor\_id}.
+  \item \texttt{appointment\_time}.
+  \item \texttt{status}.
+  \item \texttt{created\_at}.
+\end{itemize}
+
+Mức cơ sở dữ liệu còn có ràng buộc \texttt{UniqueConstraint} trên cặp \texttt{doctor\_id} và \texttt{appointment\_time}. Điều này giúp đảm bảo không trùng lịch cùng bác sĩ ở cả tầng code lẫn tầng persistence.
+
+\section{Thiết kế mã nguồn theo lớp}
+\subsection{Tổ chức thư mục}
+Điểm mạnh của dự án healthcare là cấu trúc thư mục khá sạch theo tư duy gần với Clean Architecture:
+\begin{itemize}[leftmargin=1.5em]
+  \item \texttt{domain}: entity, repository abstraction, domain service.
+  \item \texttt{application}: use-case điều phối nghiệp vụ.
+  \item \texttt{infrastructure}: model Django, repository implementation, HTTP gateway.
+  \item \texttt{interfaces}: serializer, URL và API view.
+\end{itemize}
+
+Nhờ vậy, business rule không bị nhúng trực tiếp vào controller.
+
+\subsection{Use-case đặt lịch}
+Business rule được tập trung trong \texttt{BookAppointmentUseCase}. Use-case này lần lượt kiểm tra:
+\begin{enumerate}[leftmargin=1.5em]
+  \item Thời gian hẹn phải lớn hơn thời điểm hiện tại.
+  \item Bệnh nhân phải tồn tại.
+  \item Bác sĩ phải tồn tại.
+  \item Bác sĩ phải available tại thời điểm được chọn.
+  \item Bác sĩ chưa có lịch hẹn khác đúng thời điểm đó.
+\end{enumerate}
+
+\begin{lstlisting}[style=code,language=Python,caption={Logic cốt lõi của use-case đặt lịch}]
+def execute(self, patient_id, doctor_id, appointment_time):
+    if appointment_time <= timezone.now():
+        raise ValueError("Appointment time must be in the future")
+
+    if not self.patient_gateway.exists(patient_id):
+        raise ValueError("Patient does not exist")
+
+    if not self.doctor_gateway.exists(doctor_id):
+        raise ValueError("Doctor does not exist")
+
+    if not self.doctor_gateway.is_available(doctor_id, appointment_time):
+        raise ValueError("Doctor is not available")
+
+    if self.appointment_repo.exists_by_doctor_and_time(doctor_id, appointment_time):
+        raise ValueError("Doctor already has an appointment at this time")
+\end{lstlisting}
+
+Thiết kế này cho thấy việc kiểm soát nghiệp vụ được gom về một điểm duy nhất, thuận tiện cho bảo trì và mở rộng.
+
+\subsection{Gateway liên service}
+Trong \texttt{appointment-service}, hai lớp \texttt{PatientGateway} và \texttt{DoctorGateway} là cầu nối sang các service khác. Chúng gửi HTTP request dựa trên biến môi trường \texttt{PATIENT\_SERVICE\_URL} và \texttt{DOCTOR\_SERVICE\_URL}.
+
+\begin{lstlisting}[style=code,language=Python,caption={Gateway kiểm tra dữ liệu liên service}]
+class PatientGateway:
+    def exists(self, patient_id):
+        response = requests.get(f"{PATIENT_SERVICE_URL}/patients/{patient_id}/", timeout=5)
+        return response.status_code == 200
+
+class DoctorGateway:
+    def is_available(self, doctor_id, appointment_time):
+        response = requests.get(
+            f"{DOCTOR_SERVICE_URL}/doctors/{doctor_id}/availability/",
+            params={"appointment_time": appointment_time.isoformat()},
+            timeout=5,
+        )
+        return response.status_code == 200 and response.json().get("available", False)
+\end{lstlisting}
+
+Đây là cách làm phù hợp với kiến trúc microservice, trong đó quan hệ dữ liệu được xác thực ở ranh giới service thay vì ORM join trực tiếp.
+
+\subsection{API layer gọn và rõ trách nhiệm}
+Lớp \texttt{interfaces/views.py} trong từng service giữ vai trò chuyển đổi HTTP request thành lệnh gọi use-case. Ví dụ, \texttt{AppointmentListCreateView} thực hiện validate serializer trước, sau đó khởi tạo use-case và trả mã lỗi \texttt{400} khi business rule không đạt.
+
+Điểm này giúp controller mỏng, dễ đọc và tránh việc trộn lẫn logic framework với logic nghiệp vụ.
+
+\subsection{Gateway công khai bằng Nginx}
+Khác với dự án e-commerce dùng Django gateway, hệ healthcare dùng Nginx để reverse proxy các API path:
+\begin{itemize}[leftmargin=1.5em]
+  \item \texttt{/api/patients/} tới \texttt{patient-service}
+  \item \texttt{/api/doctors/} tới \texttt{doctor-service}
+  \item \texttt{/api/appointments/} tới \texttt{appointment-service}
+\end{itemize}
+
+\begin{lstlisting}[style=code,language=bash,caption={Ý tưởng routing tại Nginx gateway}]
+location /api/appointments/ {
+    proxy_pass http://appointment-service:8000/appointments/;
+}
+\end{lstlisting}
+
+Giải pháp này tối giản nhưng hiệu quả cho môi trường demo, đồng thời tách rõ gateway hạ tầng khỏi logic nghiệp vụ backend.
+
+\subsection{Frontend tĩnh phục vụ demo toàn luồng}
+Frontend trong \texttt{gateway/frontend/app.js} dùng JavaScript thuần. Mặc dù đơn giản, giao diện vẫn đáp ứng đầy đủ chuỗi thao tác:
+\begin{itemize}[leftmargin=1.5em]
+  \item Tạo bệnh nhân.
+  \item Tạo bác sĩ.
+  \item Đặt lịch khám.
+  \item Đồng bộ danh sách lên giao diện.
+  \item Ghi log thành công hoặc lỗi.
+\end{itemize}
+
+Đặc biệt, khi đặt lịch hệ thống tự chuyển \texttt{datetime-local} sang ISO UTC rồi gửi lên backend. Đây là chi tiết triển khai cần thiết để tránh sai lệch định dạng thời gian.
+
+\section{Triển khai và kết quả}
+\subsection{Môi trường triển khai}
+Toàn bộ hệ thống được chạy bằng:
+\begin{lstlisting}[style=code,basicstyle=\ttfamily\small]
+cd healthcare-microservices
+docker compose up --build
+\end{lstlisting}
+
+Sau khi hoàn tất, gateway được public tại:
+\begin{lstlisting}[style=code,basicstyle=\ttfamily\small]
+http://localhost:8080
+\end{lstlisting}
+
+Ba backend service và PostgreSQL chỉ chạy trong Docker network nội bộ, không mở trực tiếp ra host. Cách cấu hình này phù hợp với nguyên tắc đóng kín bề mặt tấn công và chỉ công khai một entrypoint.
+
+\subsection{Kết quả đạt được}
+Dựa trên cấu trúc mã nguồn hiện tại, dự án đạt được các kết quả chính:
+\begin{itemize}[leftmargin=1.5em]
+  \item Triển khai thành công luồng đặt lịch khám hoàn chỉnh theo kiến trúc microservice.
+  \item Tách rõ ba miền nghiệp vụ bệnh nhân, bác sĩ và lịch hẹn.
+  \item Áp dụng business rule tập trung tại \texttt{appointment-service}.
+  \item Có cơ chế chống đặt trùng lịch ở cả tầng use-case lẫn cơ sở dữ liệu.
+  \item Cung cấp giao diện web đơn giản nhưng đủ để demo nghiệp vụ end-to-end.
+  \item Đóng gói toàn bộ hệ thống bằng Docker Compose, thuận lợi cho học tập và trình diễn.
+\end{itemize}
+
+\subsection{Đánh giá kỹ thuật}
+Ưu điểm của dự án:
+\begin{itemize}[leftmargin=1.5em]
+  \item Cấu trúc lớp rõ ràng, dễ mở rộng.
+  \item Use-case tập trung, dễ kiểm soát business rule.
+  \item Gateway công khai được giữ tối giản, backend service tách biệt tốt.
+  \item Cách validate liên service phản ánh đúng tinh thần microservice.
+\end{itemize}
+
+Hạn chế hiện tại:
+\begin{itemize}[leftmargin=1.5em]
+  \item Endpoint availability của bác sĩ hiện mới là mock logic đơn giản.
+  \item Chưa có xác thực người dùng hoặc phân quyền.
+  \item Chưa có hàng đợi sự kiện cho các thao tác hậu xử lý như thông báo xác nhận lịch khám.
+  \item Chưa thấy hệ thống test tự động đủ dày để bao phủ các ràng buộc nghiệp vụ quan trọng.
+\end{itemize}
+
+\section{Kết luận}
+\texttt{healthcare-microservices} là một mô hình microservice gọn nhưng có cấu trúc tốt cho bài toán đặt lịch khám bệnh. Giá trị nổi bật của dự án không chỉ nằm ở việc chia tách thành nhiều service, mà còn ở cách tổ chức mã nguồn theo lớp, cách kiểm tra ràng buộc nghiệp vụ trong use-case và cách triển khai toàn hệ thống thông qua một gateway duy nhất.
+
+Nếu phát triển tiếp, dự án có thể nâng cấp theo các hướng như xác thực tập trung, cơ chế quản lý slot khám thực sự, event-driven notification, audit log và monitoring cho từng service.
+
+\end{document}
