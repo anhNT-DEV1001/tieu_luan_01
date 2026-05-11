@@ -3,5 +3,8 @@ uvicorn==0.29.0
 scikit-learn==1.4.1.post1
 pandas==2.2.1
 numpy==1.26.4
-pydantic==2.6.4
+pydantic>=2.9.0,<3.0.0
 requests==2.32.3
+openai==1.82.0
+google-genai==1.51.0
+neo4j==5.28.1

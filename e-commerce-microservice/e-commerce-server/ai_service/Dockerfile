@@ -2,6 +2,10 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+ENV AI_PROVIDER=openai
+ENV OPENAI_MODEL=gpt-5.4-mini
+ENV GEMINI_MODEL=gemini-2.5-flash
+
 COPY requirements.txt .
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
