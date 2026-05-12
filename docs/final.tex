@@ -1,0 +1,880 @@
+\documentclass[12pt,a4paper]{report}
+
+\usepackage[a4paper,margin=2.4cm]{geometry}
+\usepackage[T5]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[vietnamese]{babel}
+\usepackage{microtype}
+\usepackage{setspace}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{caption}
+\usepackage{float}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!50!black,
+  urlcolor=blue!50!black,
+  pdftitle={Bao cao tieu luan kien truc microservices va AI service},
+  pdfauthor={Nguyen Tuan Anh}
+}
+
+\lstdefinestyle{code}{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{black!20},
+  backgroundcolor=\color{black!2},
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false
+}
+
+\setstretch{1.22}
+\setlist[itemize]{leftmargin=1.5em}
+\setlist[enumerate]{leftmargin=1.5em}
+
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Tiểu luận kiến trúc và thiết kế}
+\rhead{Microservices và AI Service}
+\cfoot{\thepage}
+
+\titleformat{\chapter}{\huge\bfseries}{Chương \thechapter.}{0.8em}{}
+\titleformat{\section}{\Large\bfseries}{\thesection.}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection.}{0.6em}{}
+
+\begin{document}
+
+\begin{titlepage}
+  \centering
+  {\Large \textbf{BÁO CÁO TIỂU LUẬN}\par}
+  \vspace{1.2cm}
+  {\Huge \textbf{KIẾN TRÚC MICROSERVICES VÀ TÍCH HỢP AI SERVICE}\par}
+  \vspace{0.6cm}
+  {\Large Dựa trên hệ thống \texttt{e-commerce-microservice} và \texttt{healthcare-microservices}\par}
+  \vfill
+  \begin{flushleft}
+    \textbf{Họ và tên:} Nguyễn Tuấn Anh\\[0.35cm]
+    \textbf{Lớp:} E22CNPM-01\\[0.35cm]
+    \textbf{Mã sinh viên:} B22DCDT019\\[0.35cm]
+    \textbf{Nội dung:} So sánh Monolithic/Microservices, thiết kế hệ thống thương mại điện tử, AI-service RAG chat, triển khai và tích hợp toàn hệ thống.
+  \end{flushleft}
+  \vfill
+  {\large \today\par}
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+\chapter*{Tóm tắt}
+\addcontentsline{toc}{chapter}{Tóm tắt}
+Báo cáo này tổng hợp toàn bộ nội dung đã xây dựng trong hai mã nguồn \texttt{e-commerce-microservice} và \texttt{healthcare-microservices}. Phần trọng tâm là hệ thống thương mại điện tử theo kiến trúc microservices gồm frontend Next.js, Django API gateway, các dịch vụ nghiệp vụ độc lập, PostgreSQL, Neo4j và AI service FastAPI. Ngoài ra, dự án healthcare được dùng như một minh chứng bổ sung về cách áp dụng microservices trong miền nghiệp vụ đặt lịch khám bệnh.
+
+Cấu trúc báo cáo đi theo yêu cầu trong tài liệu \texttt{requirement.md}: Chương 1 so sánh Monolithic và Microservices; Chương 2 phân tích và thiết kế chi tiết hệ thống e-commerce; Chương 3 trình bày kỹ AI-service, pipeline RAG chat, dữ liệu thử nghiệm và tích hợp chatbot; Chương 4 mô tả triển khai, công nghệ sử dụng, kết quả đạt được và hướng mở rộng.
+
+\chapter{So sánh Monolithic và Microservices}
+
+\section{Khái niệm kiến trúc Monolithic}
+Kiến trúc Monolithic là cách xây dựng ứng dụng trong đó các chức năng chính như giao diện, nghiệp vụ, truy cập dữ liệu, xác thực, quản trị và tích hợp bên ngoài được đóng gói trong một khối triển khai duy nhất. Với ứng dụng Django truyền thống, toàn bộ module như người dùng, sản phẩm, đơn hàng, thanh toán có thể nằm trong cùng một project, cùng database và cùng tiến trình deploy.
+
+Ưu điểm lớn nhất của Monolithic là đơn giản ở giai đoạn đầu: dễ khởi tạo, dễ debug, ít vấn đề mạng nội bộ, ít yêu cầu hạ tầng. Tuy nhiên, khi hệ thống lớn dần, các module phụ thuộc lẫn nhau mạnh hơn, mỗi lần thay đổi một chức năng nhỏ vẫn có thể phải build và deploy toàn bộ ứng dụng. Điều này làm giảm tốc độ phát triển, tăng rủi ro regression và khó mở rộng riêng từng miền nghiệp vụ.
+
+\section{Khái niệm kiến trúc Microservices}
+Microservices chia hệ thống thành nhiều dịch vụ nhỏ, mỗi dịch vụ phụ trách một miền nghiệp vụ rõ ràng, có khả năng triển khai độc lập và giao tiếp với nhau qua API hoặc message broker. Trong dự án này, hệ thống e-commerce được chia thành \texttt{user\_service}, \texttt{product\_service}, \texttt{order\_service}, \texttt{payment\_service}, \texttt{ai\_service}, \texttt{gateway} và \texttt{client}.
+
+Mỗi service có boundary rõ ràng. Ví dụ, \texttt{order\_service} không dùng foreign key trực tiếp đến bảng user hoặc product mà gọi HTTP sang \texttt{user\_service} và \texttt{product\_service} để xác thực dữ liệu tại thời điểm tạo đơn. Đây là điểm khác biệt quan trọng: quan hệ nghiệp vụ vẫn tồn tại, nhưng không bị ràng buộc bằng ORM join xuyên module.
+
+\section{Bảng so sánh Monolithic và Microservices}
+\begin{longtable}{p{3.2cm}p{5.3cm}p{5.3cm}}
+\toprule
+\textbf{Tiêu chí} & \textbf{Monolithic} & \textbf{Microservices} \\
+\midrule
+Đơn vị triển khai & Một ứng dụng duy nhất, build và deploy toàn bộ. & Nhiều service độc lập, có thể deploy riêng từng service. \\
+\midrule
+Tổ chức mã nguồn & Module nằm chung project, dùng chung cấu hình và runtime. & Mỗi service có source, Dockerfile, dependency và cổng riêng. \\
+\midrule
+Dữ liệu & Thường dùng một database và quan hệ trực tiếp qua foreign key. & Mỗi service sở hữu dữ liệu của mình; demo dùng chung PostgreSQL instance nhưng tách schema. \\
+\midrule
+Mở rộng & Khó scale riêng một chức năng; thường phải scale cả ứng dụng. & Có thể scale riêng service có tải cao như catalog, order hoặc AI. \\
+\midrule
+Độ phức tạp hạ tầng & Thấp ở giai đoạn đầu. & Cao hơn do cần gateway, service discovery, network, monitoring. \\
+\midrule
+Giao tiếp nội bộ & Gọi hàm trực tiếp trong cùng tiến trình. & Giao tiếp qua HTTP/API hoặc message queue. \\
+\midrule
+Khả năng lỗi & Lỗi trong một module có thể ảnh hưởng toàn ứng dụng. & Có thể cô lập lỗi tốt hơn, nhưng cần timeout, retry, circuit breaker. \\
+\midrule
+Phù hợp & Ứng dụng nhỏ, MVP, đội ngũ ít người. & Hệ thống lớn, nhiều domain, nhiều nhóm phát triển, yêu cầu scale độc lập. \\
+\bottomrule
+\end{longtable}
+
+\section{Bản vẽ thiết kế minh họa}
+\subsection{Mô hình Monolithic}
+\begin{lstlisting}[style=code,caption={Thiết kế Monolithic minh họa}]
+Browser
+   |
+   v
+Monolithic Django Application
+   |-- User Module
+   |-- Product Module
+   |-- Order Module
+   |-- Payment Module
+   |-- Admin/UI Module
+   |
+   v
+Single Relational Database
+\end{lstlisting}
+
+Trong thiết kế này, tất cả module cùng chạy trong một ứng dụng Django. Khi cần thay đổi logic đơn hàng, đội phát triển vẫn phải deploy lại toàn bộ khối ứng dụng. Việc gọi dữ liệu người dùng hoặc sản phẩm thường được thực hiện bằng ORM quan hệ trực tiếp.
+
+\subsection{Mô hình Microservices}
+\begin{lstlisting}[style=code,caption={Thiết kế Microservices trong dự án e-commerce}]
+Browser
+   |
+   v
+Next.js Client
+   |
+   v
+Django API Gateway
+   |---------------------> User Service
+   |---------------------> Product Service
+   |---------------------> Order Service
+   |                         |---- validates user
+   |                         |---- validates product
+   |---------------------> Payment Service
+   |                         |---- validates order
+   |---------------------> AI Service
+                             |---- retrieval from services
+                             |---- Neo4j vector search
+
+PostgreSQL: user_service, product_service, order_service, payment_service schemas
+Neo4j: graph/vector knowledge base for AI retrieval
+\end{lstlisting}
+
+\section{Thực tế ứng dụng ở Big Tech}
+Các công ty công nghệ lớn thường chuyển dần từ monolithic sang microservices khi sản phẩm có nhiều nhóm phát triển và lưu lượng tăng cao. Amazon là ví dụ kinh điển về việc tách hệ thống thương mại điện tử thành các service theo miền như catalog, checkout, payment, recommendation. Netflix phổ biến mô hình microservices trên cloud để scale streaming, recommendation, billing và account. Uber cũng tách hệ thống theo các miền như rider, driver, trip, pricing, notification.
+
+Điểm chung là microservices không phải mục tiêu tự thân, mà là giải pháp cho bài toán tổ chức và vận hành ở quy mô lớn. Với đồ án này, việc chia e-commerce thành các service nhỏ giúp mô phỏng tư duy đó ở mức học thuật: mỗi service có trách nhiệm rõ, có endpoint riêng, có dữ liệu riêng và có thể được đóng gói bằng Docker.
+
+\chapter{Hệ thống thương mại điện tử e-commerce}
+
+\section{Mục tiêu và phạm vi hệ thống}
+Hệ thống \texttt{e-commerce-microservice} mô phỏng một nền tảng thương mại điện tử có khả năng quản lý người dùng, sản phẩm, đơn hàng, thanh toán, dashboard và chatbot tư vấn. Phạm vi triển khai tập trung vào các nghiệp vụ lõi:
+\begin{itemize}
+  \item Người dùng: lưu thông tin khách hàng, nhân viên, quản trị viên.
+  \item Sản phẩm: quản lý catalog, giá, tồn kho, danh mục, thương hiệu và thuộc tính mở rộng.
+  \item Đơn hàng: tạo đơn từ khách hàng và danh sách sản phẩm, tính tiền, lưu snapshot sản phẩm.
+  \item Thanh toán: tạo thanh toán dựa trên đơn hàng đã tồn tại.
+  \item Dashboard: tổng hợp dữ liệu từ nhiều service.
+  \item AI chat: truy vấn sản phẩm, đơn hàng và khách hàng bằng ngôn ngữ tự nhiên.
+\end{itemize}
+
+\section{Phân tích yêu cầu}
+\subsection{Yêu cầu chức năng}
+\begin{longtable}{p{2.6cm}p{4.2cm}p{6.6cm}}
+\toprule
+\textbf{Mã} & \textbf{Tên yêu cầu} & \textbf{Mô tả} \\
+\midrule
+FR-01 & Quản lý người dùng & Tạo, liệt kê, xem chi tiết user; phân loại theo vai trò \texttt{admin}, \texttt{customer}, \texttt{staff}. \\
+FR-02 & Quản lý sản phẩm & Lưu catalog sản phẩm với SKU, danh mục, giá, giá giảm, tồn kho, đánh giá và metadata. \\
+FR-03 & Tạo đơn hàng & Nhận \texttt{user\_id} và danh sách item; xác thực user/product; tính tổng tiền và lưu order. \\
+FR-04 & Thanh toán & Tạo bản ghi payment dựa trên order; lưu phương thức, trạng thái, mã giao dịch và phản hồi gateway demo. \\
+FR-05 & Dashboard & Hiển thị summary của user, product, order, payment để quan sát nhanh trạng thái hệ thống. \\
+FR-06 & Chatbot AI & Cho phép hỏi về sản phẩm, đơn hàng, khách hàng; trả lời bằng tiếng Việt dựa trên context retrieval. \\
+FR-07 & Proxy API & Frontend chỉ gọi một entrypoint backend, gateway chịu trách nhiệm định tuyến đến service tương ứng. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Yêu cầu phi chức năng}
+\begin{itemize}
+  \item \textbf{Tách miền nghiệp vụ}: mỗi service chỉ chịu trách nhiệm một bounded context.
+  \item \textbf{Dễ triển khai}: toàn bộ stack chạy bằng \texttt{docker compose up --build}.
+  \item \textbf{Dễ mở rộng}: có thể bổ sung authentication, message broker hoặc observability sau này.
+  \item \textbf{Dễ demo}: frontend có dashboard, trang quản lý sản phẩm, tạo đơn, tạo thanh toán và chatbot.
+  \item \textbf{Tính nhất quán dữ liệu ở mức demo}: order và payment xác thực dữ liệu liên service trước khi ghi.
+\end{itemize}
+
+\section{Phân rã dịch vụ}
+\begin{longtable}{p{3.2cm}p{4.2cm}p{6.2cm}}
+\toprule
+\textbf{Service} & \textbf{Công nghệ} & \textbf{Trách nhiệm} \\
+\midrule
+\texttt{client} & Next.js, TypeScript, Tailwind CSS & Giao diện dashboard, catalog, order, payment, chatbot; proxy nội bộ \texttt{/api/backend/*}. \\
+\texttt{gateway} & Django & Entry point backend duy nhất; proxy request tới các service nghiệp vụ và AI service. \\
+\texttt{user\_service} & Django & Quản lý người dùng, vai trò, trạng thái, loyalty point, thông tin liên hệ. \\
+\texttt{product\_service} & Django & Quản lý catalog, SKU, giá, tồn kho, thuộc tính sản phẩm. \\
+\texttt{order\_service} & Django & Tạo và quản lý đơn hàng; gọi user/product service để hydrate dữ liệu. \\
+\texttt{payment\_service} & Django & Tạo thanh toán; gọi order service để xác thực đơn hàng. \\
+\texttt{ai\_service} & FastAPI, NumPy, scikit-learn, Neo4j, OpenAI/Gemini & Intent classification, retrieval, RAG prompt, sinh phản hồi chatbot. \\
+\texttt{postgres} & PostgreSQL 16 & Lưu dữ liệu quan hệ; mỗi service dùng schema riêng. \\
+\texttt{neo4j} & Neo4j 5.26 & Lưu graph knowledge base và vector index cho AI retrieval. \\
+\bottomrule
+\end{longtable}
+
+\section{Use case và bảng mô tả}
+\subsection{Danh sách tác nhân}
+\begin{itemize}
+  \item \textbf{Customer}: xem sản phẩm, tạo đơn hàng, thanh toán, hỏi chatbot.
+  \item \textbf{Staff}: theo dõi dashboard, quản lý sản phẩm và đơn hàng.
+  \item \textbf{Admin}: quản trị dữ liệu người dùng, sản phẩm và quan sát toàn hệ thống.
+  \item \textbf{AI Assistant}: tiếp nhận câu hỏi, truy xuất dữ liệu và sinh câu trả lời.
+  \item \textbf{Gateway}: định tuyến request từ frontend đến service phù hợp.
+\end{itemize}
+
+\subsection{Use case tổng quan}
+\begin{lstlisting}[style=code,caption={Use case tổng quan hệ thống e-commerce}]
+Customer
+  |-- Login demo / select customer
+  |-- Browse products
+  |-- Create order
+  |-- Create payment
+  |-- Ask chatbot
+
+Staff/Admin
+  |-- View dashboard summary
+  |-- Manage product catalog
+  |-- Inspect users, orders, payments
+
+AI Assistant
+  |-- Classify intent
+  |-- Retrieve product/order/customer context
+  |-- Generate grounded Vietnamese answer
+\end{lstlisting}
+
+\subsection{Use case UC-01: Tạo đơn hàng}
+\begin{longtable}{p{3.4cm}p{10cm}}
+\toprule
+\textbf{Thuộc tính} & \textbf{Mô tả} \\
+\midrule
+Tên use case & Tạo đơn hàng \\
+Tác nhân chính & Customer hoặc Staff \\
+Tiền điều kiện & User tồn tại; sản phẩm tồn tại; request có ít nhất một item. \\
+Luồng chính & Frontend gửi order payload; gateway chuyển đến \texttt{order\_service}; service gọi \texttt{user\_service}; service gọi \texttt{product\_service} cho từng item; tính subtotal, phí ship, tổng tiền; lưu \texttt{Order} và \texttt{OrderItem}; trả JSON order. \\
+Luồng ngoại lệ & User không hợp lệ trả lỗi 502; product không hợp lệ trả lỗi 502; danh sách item rỗng trả lỗi 400. \\
+Hậu điều kiện & Đơn hàng được lưu cùng snapshot sản phẩm tại thời điểm mua. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Use case UC-02: Tạo thanh toán}
+\begin{longtable}{p{3.4cm}p{10cm}}
+\toprule
+\textbf{Thuộc tính} & \textbf{Mô tả} \\
+\midrule
+Tên use case & Tạo thanh toán cho đơn hàng \\
+Tác nhân chính & Customer hoặc Staff \\
+Tiền điều kiện & Order tồn tại trong \texttt{order\_service}. \\
+Luồng chính & Frontend gửi \texttt{order\_id} và method; gateway chuyển đến \texttt{payment\_service}; payment service gọi order service; tạo transaction code; lưu payment; trả kết quả. \\
+Luồng ngoại lệ & Order không tồn tại hoặc order service lỗi thì trả lỗi xác thực đơn hàng. \\
+Hậu điều kiện & Payment được lưu với trạng thái \texttt{paid} mặc định trong demo, có \texttt{gateway\_response}. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Use case UC-03: Chatbot tư vấn}
+\begin{longtable}{p{3.4cm}p{10cm}}
+\toprule
+\textbf{Thuộc tính} & \textbf{Mô tả} \\
+\midrule
+Tên use case & Hỏi chatbot về sản phẩm, đơn hàng, khách hàng \\
+Tác nhân chính & Customer, Staff, Admin \\
+Tiền điều kiện & AI service hoạt động; dữ liệu nghiệp vụ có thể lấy qua service hoặc Neo4j. \\
+Luồng chính & Người dùng nhập câu hỏi; AI service phân loại intent; xác định scope retrieval; truy xuất top documents; dựng prompt có context; gọi OpenAI/Gemini hoặc fallback local; trả câu trả lời và nguồn. \\
+Luồng ngoại lệ & Không có API key thì dùng fallback response; Neo4j lỗi thì fallback sang TF-IDF retrieval trực tiếp từ service. \\
+Hậu điều kiện & Người dùng nhận phản hồi có căn cứ từ dữ liệu hệ thống. \\
+\bottomrule
+\end{longtable}
+
+\section{Thiết kế kiến trúc chi tiết}
+\subsection{Kiến trúc runtime}
+\begin{lstlisting}[style=code,caption={Runtime architecture của e-commerce}]
+Host
+ |-- localhost:3000 -> ecommerce-client
+ |-- localhost:8000 -> ecommerce-gateway
+ |-- localhost:8005 -> ecommerce-ai-service
+ |-- localhost:5433 -> ecommerce-postgres
+ |-- localhost:7474/7687 -> ecommerce-neo4j
+
+Docker network
+ |-- ecommerce-user-service:8001
+ |-- ecommerce-product-service:8002
+ |-- ecommerce-order-service:8003
+ |-- ecommerce-payment-service:8004
+ |-- ecommerce-ai-service:8005
+\end{lstlisting}
+
+\subsection{Gateway pattern}
+Gateway Django nhận các URL dạng \texttt{/api/<service>/<subpath>} rồi chuyển tiếp đến upstream tương ứng. Lợi ích của cách này là frontend không cần biết địa chỉ nội bộ của từng backend. Khi service thay đổi port hoặc container name, chỉ cần đổi biến môi trường trong gateway.
+
+\begin{lstlisting}[style=code,language=Python,caption={Ý tưởng proxy trong gateway}]
+def proxy_router(request, service, subpath=""):
+    if service not in settings.SERVICE_URLS:
+        return JsonResponse({"error": "Unsupported service"}, status=404)
+
+    upstream = urljoin(settings.SERVICE_URLS[service], subpath.lstrip("/"))
+    response = requests.request(
+        method=request.method,
+        url=upstream,
+        headers=headers,
+        data=request.body or None,
+        timeout=20,
+    )
+    return HttpResponse(content=response.content, status=response.status_code)
+\end{lstlisting}
+
+\subsection{Sequence diagram: tạo đơn hàng}
+\begin{lstlisting}[style=code,caption={Sequence tạo đơn hàng}]
+Customer/Staff -> Next.js Client: Submit order form
+Next.js Client -> /api/backend/orders/: POST order payload
+Next.js Proxy -> Django Gateway: POST /api/orders/
+Django Gateway -> Order Service: forward request
+Order Service -> User Service: GET /api/users/{user_id}/
+User Service --> Order Service: user JSON
+loop each item
+  Order Service -> Product Service: GET /api/products/{product_id}/
+  Product Service --> Order Service: product JSON
+end
+Order Service -> PostgreSQL: INSERT Order
+Order Service -> PostgreSQL: BULK INSERT OrderItem
+Order Service --> Gateway: 201 order JSON
+Gateway --> Client: 201 order JSON
+Client --> User: Update order state
+\end{lstlisting}
+
+\subsection{Activity diagram: tạo đơn hàng}
+\begin{lstlisting}[style=code,caption={Activity tạo đơn hàng}]
+Start
+  |
+  v
+Receive order payload
+  |
+  v
+Validate items not empty? -- no --> Return 400
+  |
+ yes
+  v
+Fetch user from user_service -- fail --> Return 502
+  |
+ success
+  v
+For each item: fetch product -- fail --> Return 502
+  |
+ success
+  v
+Calculate subtotal, shipping_fee, total_amount
+  |
+  v
+Create Order and OrderItem snapshots
+  |
+  v
+Return 201 with order JSON
+  |
+ End
+\end{lstlisting}
+
+\subsection{Sequence diagram: tạo thanh toán}
+\begin{lstlisting}[style=code,caption={Sequence tạo thanh toán}]
+Customer/Staff -> Client: Select order and payment method
+Client -> Gateway: POST /api/payments/
+Gateway -> Payment Service: forward payment payload
+Payment Service -> Order Service: GET /api/orders/{order_id}/
+Order Service --> Payment Service: order JSON
+Payment Service -> PostgreSQL: INSERT Payment
+Payment Service --> Gateway: 201 payment JSON
+Gateway --> Client: payment result
+\end{lstlisting}
+
+\section{Thiết kế lớp và mô hình dữ liệu}
+\subsection{Class diagram dạng văn bản}
+\begin{lstlisting}[style=code,caption={Class diagram rút gọn}]
+UserProfile
+  + id
+  + full_name
+  + email
+  + role: admin|customer|staff
+  + status: active|inactive
+  + loyalty_points
+  + address, city, country
+  + metadata
+  + to_dict()
+
+Product
+  + id
+  + sku
+  + name
+  + category
+  + brand
+  + price
+  + discount_price
+  + stock_quantity
+  + rating
+  + tags, attributes
+  + current_price()
+  + to_dict()
+
+Order
+  + id
+  + user_id
+  + customer_name
+  + customer_email
+  + shipping_address
+  + status
+  + subtotal_amount
+  + shipping_fee
+  + total_amount
+  + items: OrderItem[]
+  + to_dict()
+
+OrderItem
+  + id
+  + order_id
+  + product_id
+  + product_name
+  + sku
+  + quantity
+  + unit_price
+  + line_total
+  + product_snapshot
+
+Payment
+  + id
+  + order_id
+  + payer_name
+  + amount
+  + method
+  + status
+  + transaction_code
+  + gateway_response
+  + paid_at
+\end{lstlisting}
+
+\subsection{Data model}
+\begin{longtable}{p{3cm}p{4.3cm}p{6.3cm}}
+\toprule
+\textbf{Bảng} & \textbf{Trường chính} & \textbf{Ghi chú thiết kế} \\
+\midrule
+\texttt{UserProfile} & \texttt{id}, \texttt{email}, \texttt{role}, \texttt{status} & Email unique; role dùng \texttt{TextChoices}; metadata JSON giúp mở rộng không cần đổi schema ngay. \\
+\texttt{Product} & \texttt{id}, \texttt{sku}, \texttt{slug}, \texttt{price}, \texttt{stock\_quantity} & SKU và slug unique; hỗ trợ discount price, attributes, tags và thumbnail. \\
+\texttt{Order} & \texttt{id}, \texttt{user\_id}, \texttt{status}, \texttt{total\_amount} & Không dùng FK sang user service; lưu snapshot thông tin khách hàng để đọc nhanh. \\
+\texttt{OrderItem} & \texttt{order\_id}, \texttt{product\_id}, \texttt{sku}, \texttt{quantity}, \texttt{line\_total} & Có FK nội bộ đến \texttt{Order}; lưu \texttt{product\_snapshot} để bảo toàn lịch sử. \\
+\texttt{Payment} & \texttt{order\_id}, \texttt{amount}, \texttt{method}, \texttt{transaction\_code} & Không FK sang order service; transaction code unique; gateway response lưu JSON. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Data tech sử dụng}
+\begin{itemize}
+  \item \textbf{PostgreSQL}: lưu dữ liệu quan hệ cho user, product, order và payment. Trong demo, các service dùng chung một instance nhưng tách schema: \texttt{user\_service}, \texttt{product\_service}, \texttt{order\_service}, \texttt{payment\_service}.
+  \item \textbf{JSONField}: dùng cho metadata, tags, attributes, product snapshot và gateway response. Cách này giúp dữ liệu demo linh hoạt hơn.
+  \item \textbf{Neo4j}: lưu graph phục vụ AI retrieval, gồm các quan hệ như Customer đặt Order, Order chứa Product, Product thuộc Category.
+  \item \textbf{Vector index}: Neo4j vector index \texttt{document\_embeddings} hỗ trợ truy vấn gần nghĩa khi chatbot nhận câu hỏi tự nhiên.
+\end{itemize}
+
+\section{Thiết kế frontend và giao diện}
+Frontend \texttt{e-commerce-client} dùng Next.js và TypeScript. Giao diện gồm dashboard, trang quản lý sản phẩm, trang đặt hàng khách hàng, login demo và chatbot. Client không gọi trực tiếp từng service nội bộ; thay vào đó gọi route handler \texttt{/api/backend/[...path]/route.ts}. Route handler này forward request đến gateway theo biến môi trường \texttt{ECOMMERCE\_API\_BASE\_URL}.
+
+\begin{lstlisting}[style=code,language=TypeScript,caption={Proxy nội bộ trong Next.js}]
+const backendBaseUrl =
+  process.env.ECOMMERCE_API_BASE_URL?.replace(/\/$/, "")
+  ?? "http://127.0.0.1:8000";
+
+const target = `${backendBaseUrl}/api/${backendPath}${search}`;
+const response = await fetch(target, {
+  method: request.method,
+  body: request.method === "GET" ? undefined : await request.text(),
+  cache: "no-store",
+});
+\end{lstlisting}
+
+\section{Đánh giá thiết kế chương 2}
+Thiết kế e-commerce đạt được mục tiêu chính của microservices: phân tách rõ miền nghiệp vụ, giao tiếp qua API, triển khai bằng container và có gateway thống nhất. Điểm tốt nhất là \texttt{order\_service} và \texttt{payment\_service} thể hiện được cách xử lý dữ liệu liên service mà không dùng khóa ngoại xuyên service. Việc snapshot dữ liệu sản phẩm trong \texttt{OrderItem} cũng là lựa chọn đúng vì đơn hàng phải giữ nguyên lịch sử giá và thông tin sản phẩm tại thời điểm mua.
+
+Hạn chế hiện tại là giao tiếp liên service vẫn đồng bộ qua HTTP, chưa có retry, circuit breaker hoặc message queue. Hệ thống cũng chưa có authentication tập trung, phân quyền gateway và test tự động đủ dày. Tuy nhiên, với mục tiêu tiểu luận, đây là nền tảng tốt để minh họa kiến trúc, thiết kế và triển khai microservices.
+
+\chapter{AI-service và RAG Chat}
+
+\section{Mục tiêu của AI-service}
+AI-service trong dự án e-commerce được xây dựng như một service độc lập, chạy FastAPI tại container \texttt{ecommerce-ai-service}. Mục tiêu không chỉ là trả lời hardcode mà là tạo một pipeline có khả năng:
+\begin{itemize}
+  \item Phân loại ý định câu hỏi bằng local neural intent classifier.
+  \item Nhận diện câu hỏi thuộc miền sản phẩm, đơn hàng hoặc khách hàng.
+  \item Truy xuất dữ liệu thật từ các service nghiệp vụ hoặc Neo4j.
+  \item Dựng context RAG và yêu cầu LLM trả lời dựa trên context.
+  \item Trả về \texttt{sources} để biết câu trả lời dựa trên dữ liệu nào.
+\end{itemize}
+
+\section{Cấu trúc mã nguồn AI-service}
+\begin{lstlisting}[style=code,caption={Cấu trúc chính của ai_service}]
+e-commerce-server/ai_service/
+  |-- main.py
+  |-- retrieval.py
+  |-- ingest_to_neo4j.py
+  |-- train_models_kaggle.py
+  |-- requirements.txt
+  |-- Dockerfile
+  |-- data/
+  |   |-- intent_seed_dataset.csv
+  |-- models/
+      |-- intent_mlp_model.npz
+      |-- training_metadata.json
+      |-- fine_tune_train.jsonl
+      |-- fine_tune_valid.jsonl
+\end{lstlisting}
+
+\texttt{main.py} chứa FastAPI app, endpoint chat/search/health/trends, logic load model intent và gọi LLM. \texttt{retrieval.py} phụ trách lấy dữ liệu từ user/product/order service, build document, rank bằng TF-IDF hoặc truy vấn Neo4j vector index. \texttt{ingest\_to\_neo4j.py} đưa dữ liệu nghiệp vụ vào graph. \texttt{train\_models\_kaggle.py} train local MLP intent classifier từ CSV/JSON/JSONL.
+
+\section{Endpoint của AI-service}
+\begin{longtable}{p{3.2cm}p{3cm}p{7cm}}
+\toprule
+\textbf{Endpoint} & \textbf{Method} & \textbf{Vai trò} \\
+\midrule
+\texttt{/api/ai/health} & GET & Kiểm tra provider, model LLM, Neo4j, local intent model và metadata training. \\
+\texttt{/api/ai/chat} & POST & Nhận message, phân loại intent, retrieval context, gọi LLM/fallback và trả câu trả lời. \\
+\texttt{/api/ai/search} & POST & Test lớp retrieval độc lập, trả các document gần nhất theo query. \\
+\texttt{/api/ai/trends} & POST & Demo dự đoán trend đơn giản từ chuỗi historical sales. \\
+\bottomrule
+\end{longtable}
+
+\section{Pipeline RAG chat}
+\subsection{Luồng xử lý tổng quát}
+\begin{lstlisting}[style=code,caption={Pipeline RAG chat}]
+User message
+  |
+  v
+Normalize text
+  |
+  v
+Local neural MLP intent classifier
+  |
+  +-- if confidence >= 0.35 -> use neural intent
+  |
+  +-- else rule-based keyword intent
+  |
+  v
+Resolve RAG scope
+  |-- product_inquiry -> products
+  |-- order_status -> orders
+  |-- customer_lookup -> users
+  |
+  v
+Retrieve documents
+  |-- Neo4j exact entity search
+  |-- Neo4j vector search
+  |-- fallback TF-IDF over live service data
+  |
+  v
+Build Vietnamese grounded prompt
+  |
+  v
+Call Gemini/OpenAI or local fallback
+  |
+  v
+Return JSON: intent, response, confidence, sources
+\end{lstlisting}
+
+\subsection{Phân loại intent}
+AI-service kết hợp hai cách phân loại intent:
+\begin{itemize}
+  \item \textbf{Local neural MLP}: model NumPy được train từ dữ liệu intent, dùng đặc trưng word, bigram và character n-gram. Nếu confidence từ 0.35 trở lên, hệ thống ưu tiên kết quả này.
+  \item \textbf{Rule-based detection}: nếu model không đủ tự tin, hệ thống tìm keyword như \texttt{product}, \texttt{sản phẩm}, \texttt{order}, \texttt{đơn hàng}, \texttt{customer}, \texttt{email}, \texttt{loyalty}.
+\end{itemize}
+
+Các intent chính gồm \texttt{greeting}, \texttt{product\_inquiry}, \texttt{order\_status}, \texttt{complaint}, \texttt{farewell}, \texttt{customer\_lookup} và \texttt{unknown}. Với intent thuộc dữ liệu nghiệp vụ, hệ thống bật RAG để lấy context.
+
+\subsection{Mô hình MLP local}
+\begin{lstlisting}[style=code,caption={Kiến trúc intent classifier local}]
+Input text
+  -> normalize
+  -> tokenize word / bigram / character n-gram
+  -> binary feature vector
+  -> Dense(128) + ReLU
+  -> Dense(64) + ReLU
+  -> Dense(number_of_intents) + Softmax
+  -> intent + confidence
+\end{lstlisting}
+
+Model được lưu tại \texttt{ai\_service/models/intent\_mlp\_model.npz}. Metadata training được lưu trong \texttt{training\_metadata.json}, giúp endpoint health cho biết model đã được load hay chưa. Cách này phù hợp với đồ án vì không phụ thuộc TensorFlow/PyTorch nặng, nhưng vẫn thể hiện được một pipeline deep learning cơ bản.
+
+\subsection{Retrieval layer}
+\texttt{retrieval.py} xây dựng tài liệu tìm kiếm từ ba nguồn:
+\begin{itemize}
+  \item \textbf{products}: tên, SKU, category, brand, description, tags, color, material, attributes.
+  \item \textbf{orders}: mã đơn, tên khách, email, địa chỉ giao, trạng thái, tổng tiền, item lines.
+  \item \textbf{users}: họ tên, email, phone, role, status, city, loyalty point, metadata.
+\end{itemize}
+
+Nếu Neo4j được cấu hình, hệ thống ưu tiên truy vấn graph theo mã entity chính xác, sau đó truy vấn vector index \texttt{document\_embeddings}. Nếu Neo4j không trả kết quả hoặc không cấu hình, hệ thống fallback sang TF-IDF char n-gram trên dữ liệu lấy trực tiếp từ các service.
+
+\subsection{Graph dữ liệu trong Neo4j}
+\begin{lstlisting}[style=code,caption={Graph knowledge base cho e-commerce}]
+(Customer)-[:PLACED]->(Order)
+(Order)-[:CONTAINS]->(Product)
+(Product)-[:BELONGS_TO]->(Category)
+(Product)-[:MADE_BY]->(Brand)
+(Document)-[:ABOUT]->(Product)
+(Document)-[:ABOUT]->(Customer)
+(Document)-[:ABOUT]->(Order)
+\end{lstlisting}
+
+Graph này giúp AI-service vừa tra cứu theo quan hệ nghiệp vụ, vừa hỗ trợ vector search qua node \texttt{Document}. Việc tách \texttt{Document} khỏi entity nghiệp vụ làm pipeline retrieval linh hoạt hơn: một sản phẩm, khách hàng hoặc đơn hàng có thể được biểu diễn thành một đoạn text tối ưu cho tìm kiếm.
+
+\section{Prompt và nguyên tắc sinh câu trả lời}
+Prompt yêu cầu LLM trả lời bằng tiếng Việt, ngắn gọn, chính xác và chỉ dựa trên context RAG cho dữ liệu cụ thể. LLM phải trả JSON hợp lệ gồm các khóa \texttt{intent}, \texttt{confidence}, \texttt{answer}. Quy tắc quan trọng là không bịa dữ liệu nếu context không đủ.
+
+\begin{lstlisting}[style=code,caption={Ràng buộc quan trọng trong prompt}]
+Bạn là trợ lý AI cho hệ thống e-commerce nội bộ.
+Nếu có context RAG, chỉ dựa trên context đó cho các dữ liệu cụ thể
+như đơn hàng, sản phẩm, khách hàng.
+Nếu context không đủ, hãy nói rõ giới hạn và đề nghị người dùng cung cấp
+thêm mã đơn hàng, SKU, email hoặc tên.
+Bạn phải trả về JSON hợp lệ với các khóa: intent, confidence, answer.
+Không bịa ra dữ liệu không có trong context.
+\end{lstlisting}
+
+\section{Dữ liệu thử nghiệm}
+\subsection{Mẫu dữ liệu intent}
+\begin{longtable}{p{6cm}p{4cm}p{3.2cm}}
+\toprule
+\textbf{Câu hỏi mẫu} & \textbf{Intent mong đợi} & \textbf{Scope RAG} \\
+\midrule
+\texttt{show me products} & \texttt{product\_inquiry} & \texttt{products} \\
+\texttt{kiểm tra đơn hàng 1} & \texttt{order\_status} & \texttt{orders} \\
+\texttt{tìm khách hàng có email demo@example.com} & \texttt{customer\_lookup} & \texttt{users} \\
+\bottomrule
+\end{longtable}
+
+\subsection{Mẫu request chat}
+\begin{lstlisting}[style=code,caption={Request test chatbot}]
+POST /api/ai/chat
+Content-Type: application/json
+
+{
+  "message": "show me products"
+}
+\end{lstlisting}
+
+\subsection{Mẫu response kỳ vọng}
+\begin{lstlisting}[style=code,caption={Response dạng rút gọn}]
+{
+  "intent": "product_inquiry",
+  "response": "Sản phẩm liên quan gồm ...",
+  "confidence": 0.82,
+  "sources": [
+    {
+      "entity_type": "product",
+      "entity_id": "1",
+      "title": "Product name (SKU)",
+      "score": 0.91
+    },
+    {
+      "entity_type": "intent_classifier",
+      "entity_id": "local_neural_mlp",
+      "title": "product_inquiry",
+      "score": 0.9998
+    }
+  ]
+}
+\end{lstlisting}
+
+\section{So sánh kết quả đầu ra}
+\begin{longtable}{p{3.2cm}p{5.1cm}p{5.1cm}}
+\toprule
+\textbf{Cách trả lời} & \textbf{Ưu điểm} & \textbf{Hạn chế} \\
+\midrule
+Rule-based/fallback & Nhanh, không cần API key, hoạt động khi LLM lỗi. & Chỉ trả lời chung, không diễn giải sâu dữ liệu. \\
+\midrule
+TF-IDF retrieval & Không cần Neo4j/vector embedding; lấy dữ liệu live từ service. & Khả năng hiểu ngữ nghĩa thấp hơn vector search. \\
+\midrule
+Neo4j vector RAG & Tìm kiếm gần nghĩa tốt hơn; có graph quan hệ nghiệp vụ. & Cần ingest dữ liệu và cấu hình embedding provider. \\
+\midrule
+LLM có RAG context & Câu trả lời tự nhiên, tiếng Việt, có thể tổng hợp nhiều nguồn. & Phụ thuộc provider; phải kiểm soát prompt để tránh hallucination. \\
+\bottomrule
+\end{longtable}
+
+\section{Triển khai AI-service}
+AI-service được khai báo trong \texttt{docker-compose.yaml}, chạy ở port \texttt{8005}. Các biến môi trường chính gồm:
+\begin{itemize}
+  \item \texttt{USER\_SERVICE\_URL}, \texttt{PRODUCT\_SERVICE\_URL}, \texttt{ORDER\_SERVICE\_URL}: nguồn dữ liệu nghiệp vụ.
+  \item \texttt{AI\_PROVIDER}: chọn \texttt{openai} hoặc \texttt{gemini}.
+  \item \texttt{OPENAI\_API\_KEY}, \texttt{OPENAI\_MODEL}: cấu hình OpenAI.
+  \item \texttt{GEMINI\_API\_KEY}, \texttt{GEMINI\_MODEL}: cấu hình Gemini.
+  \item \texttt{NEO4J\_URI}, \texttt{NEO4J\_USERNAME}, \texttt{NEO4J\_PASSWORD}: cấu hình Neo4j.
+  \item \texttt{AI\_EMBEDDING\_PROVIDER}, \texttt{AI\_EMBEDDING\_DIMENSIONS}: cấu hình embedding.
+\end{itemize}
+
+Lệnh ingest dữ liệu vào Neo4j:
+\begin{lstlisting}[style=code,caption={Ingest dữ liệu e-commerce vào Neo4j}]
+cd e-commerce-microservice
+docker compose exec ai_service python ingest_to_neo4j.py
+\end{lstlisting}
+
+Lệnh train model intent local:
+\begin{lstlisting}[style=code,caption={Train local neural intent classifier}]
+cd e-commerce-microservice
+docker compose exec ai_service python train_models_kaggle.py \
+  --dataset /app/data/intent_seed_dataset.csv \
+  --text-column text \
+  --label-column intent
+
+docker compose restart ai_service
+\end{lstlisting}
+
+\section{Tích hợp AI vào e-commerce}
+AI được tích hợp vào hệ thống theo hướng service độc lập:
+\begin{enumerate}
+  \item Frontend hiển thị khung chat trong giao diện e-commerce.
+  \item Người dùng nhập câu hỏi liên quan sản phẩm, đơn hàng hoặc khách hàng.
+  \item Client gửi request qua gateway đến \texttt{ai\_service}.
+  \item AI-service truy xuất dữ liệu từ các service nghiệp vụ hoặc Neo4j.
+  \item Câu trả lời được trả về cùng nguồn dữ liệu, giúp giao diện có thể hiển thị độ tin cậy.
+\end{enumerate}
+
+Thiết kế này phù hợp với microservices vì AI không bị nhúng trực tiếp vào \texttt{product\_service} hoặc \texttt{order\_service}. Nếu cần nâng cấp model, đổi provider, đổi embedding hoặc thêm dữ liệu knowledge base, có thể thay đổi AI-service mà ít ảnh hưởng đến các service nghiệp vụ.
+
+\section{Đánh giá chương 3}
+Chương 3 là phần thể hiện rõ nhất xu hướng kết hợp microservices và AI. AI-service có pipeline đủ thành phần: intent detection, retrieval, vector/TF-IDF fallback, prompt grounding, LLM generation và source attribution. Điểm mạnh là hệ thống không chỉ chat chung chung mà truy vấn dữ liệu thật của e-commerce. Điểm cần cải thiện là cần bổ sung đánh giá định lượng như accuracy intent, precision@k của retrieval, latency trung bình và bộ test tự động cho các câu hỏi nghiệp vụ quan trọng.
+
+\chapter{Xây dựng và tích hợp toàn hệ thống}
+
+\section{Kiến trúc tổng thể các nội dung đã làm}
+Trong phạm vi tiểu luận, hai hệ thống được dùng để minh họa microservices ở hai miền nghiệp vụ khác nhau:
+\begin{itemize}
+  \item \textbf{E-commerce}: hệ thống chính, có frontend Next.js, Django gateway, bốn service nghiệp vụ, AI-service, PostgreSQL và Neo4j.
+  \item \textbf{Healthcare}: hệ thống đặt lịch khám, có Nginx gateway, frontend tĩnh, patient service, doctor service, appointment service và PostgreSQL.
+\end{itemize}
+
+E-commerce thể hiện kiến trúc microservices có tích hợp AI. Healthcare thể hiện cách tổ chức code theo lớp gần Clean Architecture với \texttt{domain}, \texttt{application}, \texttt{infrastructure}, \texttt{interfaces}.
+
+\section{Tổng quan healthcare-microservices}
+\subsection{Thành phần hệ thống}
+\begin{longtable}{p{3.4cm}p{10cm}}
+\toprule
+\textbf{Thành phần} & \textbf{Vai trò} \\
+\midrule
+\texttt{gateway} & Nginx gateway, phục vụ frontend tĩnh và reverse proxy API. \\
+\texttt{patient-service} & Django REST service quản lý bệnh nhân. \\
+\texttt{doctor-service} & Django REST service quản lý bác sĩ và endpoint availability. \\
+\texttt{appointment-service} & Django REST service xử lý nghiệp vụ đặt lịch khám. \\
+\texttt{postgres} & PostgreSQL dùng chung cho ba service healthcare. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Luồng đặt lịch khám}
+\begin{lstlisting}[style=code,caption={Sequence đặt lịch khám healthcare}]
+User -> Frontend: Submit appointment form
+Frontend -> Nginx Gateway: POST /api/appointments/
+Gateway -> Appointment Service: POST /appointments/
+Appointment Service -> Patient Service: GET /patients/{patient_id}/
+Patient Service --> Appointment Service: patient exists
+Appointment Service -> Doctor Service: GET /doctors/{doctor_id}/
+Doctor Service --> Appointment Service: doctor exists
+Appointment Service -> Doctor Service: GET /doctors/{doctor_id}/availability/
+Doctor Service --> Appointment Service: available=true
+Appointment Service -> PostgreSQL: INSERT appointment
+Appointment Service --> Frontend: 201 appointment
+\end{lstlisting}
+
+\subsection{Business rule chính}
+\texttt{BookAppointmentUseCase} trong \texttt{appointment-service} tập trung các ràng buộc:
+\begin{itemize}
+  \item Thời gian hẹn phải ở tương lai.
+  \item Bệnh nhân phải tồn tại.
+  \item Bác sĩ phải tồn tại.
+  \item Bác sĩ phải available tại thời điểm chọn.
+  \item Không được trùng lịch cùng bác sĩ tại cùng thời điểm.
+\end{itemize}
+
+Mức database còn có \texttt{UniqueConstraint} trên cặp \texttt{doctor\_id} và \texttt{appointment\_time}. Điều này giúp chống trùng lịch ở cả tầng nghiệp vụ và tầng lưu trữ.
+
+\section{Công nghệ sử dụng}
+\begin{longtable}{p{3.4cm}p{10cm}}
+\toprule
+\textbf{Công nghệ} & \textbf{Mục đích sử dụng} \\
+\midrule
+Django & Xây dựng gateway và các backend service nghiệp vụ trong e-commerce/healthcare. \\
+FastAPI & Xây dựng AI-service có endpoint chat/search/health/trends. \\
+Next.js & Frontend chính cho e-commerce, hỗ trợ dashboard và chatbot. \\
+JavaScript thuần & Frontend tĩnh cho healthcare gateway. \\
+PostgreSQL & Lưu dữ liệu quan hệ cho các service. \\
+Neo4j & Lưu graph và vector index cho RAG retrieval. \\
+NumPy & Hiện thực local neural MLP intent classifier. \\
+scikit-learn & TF-IDF vectorizer và cosine similarity cho retrieval fallback. \\
+OpenAI/Gemini & Provider sinh câu trả lời và embedding tùy cấu hình. \\
+Docker Compose & Đóng gói, build và chạy toàn bộ hệ thống multi-container. \\
+Nginx & Gateway reverse proxy cho healthcare. \\
+\bottomrule
+\end{longtable}
+
+\section{Quy trình triển khai}
+\subsection{Triển khai e-commerce}
+\begin{lstlisting}[style=code,caption={Chạy e-commerce}]
+cd e-commerce-microservice
+cp .env.example .env
+docker compose up --build
+\end{lstlisting}
+
+Các cổng mặc định:
+\begin{itemize}
+  \item Client: \texttt{http://localhost:3000}
+  \item Gateway: \texttt{http://localhost:8000}
+  \item AI-service: \texttt{http://localhost:8005}
+  \item PostgreSQL: \texttt{localhost:5433}
+  \item Neo4j HTTP/Bolt: \texttt{localhost:7474}, \texttt{localhost:7687}
+\end{itemize}
+
+\subsection{Triển khai healthcare}
+\begin{lstlisting}[style=code,caption={Chạy healthcare}]
+cd healthcare-microservices
+docker compose up --build
+\end{lstlisting}
+
+Gateway healthcare chạy tại:
+\begin{lstlisting}[style=code]
+http://localhost:8080
+\end{lstlisting}
+
+\section{Kết quả đạt được}
+\subsection{Kết quả e-commerce}
+\begin{itemize}
+  \item Xây dựng được hệ thống thương mại điện tử đa dịch vụ gồm user, product, order, payment, gateway, client và AI-service.
+  \item Tạo được luồng nghiệp vụ end-to-end: xem sản phẩm, tạo đơn hàng, tạo thanh toán, xem dashboard.
+  \item Có endpoint summary cho user/product/order/payment phục vụ dashboard.
+  \item Tích hợp chatbot AI với intent classifier, retrieval và RAG context.
+  \item Đóng gói toàn bộ bằng Docker Compose, có PostgreSQL và Neo4j.
+\end{itemize}
+
+\subsection{Kết quả healthcare}
+\begin{itemize}
+  \item Xây dựng được hệ thống đặt lịch khám gồm patient, doctor và appointment service.
+  \item Tách code theo domain, application, infrastructure và interfaces.
+  \item Có gateway Nginx làm entrypoint duy nhất.
+  \item Business rule đặt lịch được tập trung trong use-case.
+  \item Có frontend đơn giản để demo tạo bệnh nhân, bác sĩ và lịch hẹn.
+\end{itemize}
+
+\section{Đánh giá chung}
+Hai dự án đã thể hiện được các ý chính của kiến trúc microservices: phân rã theo domain, gateway entrypoint, giao tiếp liên service, container hóa và triển khai multi-service. E-commerce có độ đầy đủ cao hơn do có frontend hiện đại, dashboard và AI-service. Healthcare có giá trị ở mặt thiết kế code sạch, nơi business rule được tách khỏi controller.
+
+Các hạn chế chung gồm: chưa có xác thực/phân quyền tập trung, chưa có message broker, chưa có observability đầy đủ, chưa có retry/circuit breaker cho HTTP call và test tự động còn mỏng. Đây là các hướng phát triển phù hợp nếu nâng cấp từ demo học thuật lên hệ thống gần production.
+
+\section{Hướng mở rộng}
+\begin{itemize}
+  \item Bổ sung JWT/OAuth2 tại gateway, phân quyền theo role.
+  \item Tách database vật lý riêng cho từng service thay vì chỉ tách schema.
+  \item Dùng Kafka/RabbitMQ cho event như order created, payment paid, appointment booked.
+  \item Thêm OpenTelemetry, Prometheus, Grafana và centralized logging.
+  \item Viết test tự động cho use-case tạo đơn, thanh toán, đặt lịch và chatbot.
+  \item Đánh giá AI bằng bộ câu hỏi chuẩn, đo accuracy intent, retrieval precision và latency.
+\end{itemize}
+
+\chapter*{Kết luận}
+\addcontentsline{toc}{chapter}{Kết luận}
+Báo cáo đã trình bày đầy đủ quá trình phân tích, thiết kế, hiện thực và triển khai hệ thống microservices dựa trên hai dự án đã xây dựng. Chương 2 cho thấy cách phân rã một hệ thống thương mại điện tử thành các service độc lập, thiết kế use case, sequence/activity, class diagram và data model. Chương 3 trình bày chi tiết AI-service với pipeline RAG chat, từ intent classification, retrieval, graph/vector search đến prompt grounding và tích hợp frontend.
+
+Kết quả cuối cùng là một hệ thống có thể chạy được bằng Docker Compose, có giao diện, có backend đa dịch vụ, có cơ sở dữ liệu, có AI-service và có ví dụ healthcare bổ sung để chứng minh khả năng áp dụng kiến trúc microservices ở nhiều miền nghiệp vụ khác nhau.
+
+\end{document}
