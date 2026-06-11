@@ -1,0 +1,12 @@
+# Nhận xét khách quan từ bạn bè
+
+1. Theo mình, bài tiểu luận có bố cục khá rõ ràng và dễ theo dõi. Cách triển khai nội dung từ Monolithic đến Microservices rồi liên hệ sang DDD giúp người đọc hiểu được mạch phát triển của vấn đề một cách logic.
+2. Điểm mình đánh giá cao là bài không chỉ nói về lý thuyết mà còn bám sát một hệ thống e-commerce cụ thể. Điều này làm cho nội dung có tính ứng dụng rõ ràng và giúp người đọc thấy được ý nghĩa thực tế của các mô hình kiến trúc được trình bày.
+3. Phần phân tích bounded context và cách tách service theo nghiệp vụ được thể hiện khá tốt. Qua đó có thể thấy người thực hiện không chỉ tổng hợp tài liệu mà còn có tư duy phân tích hệ thống ở mức tương đối bài bản.
+4. Báo cáo sử dụng sơ đồ, hình ảnh và các phần minh họa đúng lúc nên hỗ trợ khá nhiều cho việc tiếp cận nội dung kỹ thuật. Với một đề tài có nhiều thành phần như microservice, đây là điểm mạnh vì giúp người đọc đỡ bị rối thông tin.
+5. Tuy nhiên, một số đoạn trình bày vẫn còn hơi dài và thiên về diễn giải liên tục. Nếu tinh gọn câu chữ hơn ở vài phần, bài sẽ tạo cảm giác chặt chẽ, học thuật và chuyên nghiệp hơn nữa.
+6. Mình thấy phần triển khai thực tế đã có nhắc đến nhiều thành phần quan trọng, nhưng phần đánh giá hiệu năng, khả năng mở rộng và độ ổn định của hệ thống vẫn còn khá ngắn. Nếu có thêm số liệu thử nghiệm hoặc tình huống kiểm thử cụ thể thì sức thuyết phục của bài sẽ tăng lên đáng kể.
+7. Việc đưa AI service vào trong báo cáo là một điểm mới và tạo được dấu ấn riêng cho đề tài. Nó cho thấy người thực hiện có sự cập nhật xu hướng công nghệ và biết mở rộng bài toán beyond các chức năng thương mại điện tử cơ bản.
+8. Ở góc độ hình thức, mình nghĩ bài sẽ tốt hơn nếu thống nhất hơn về cách dùng thuật ngữ tiếng Anh và tiếng Việt trong toàn bộ nội dung. Khi các khái niệm được gọi tên nhất quán, tổng thể bài viết sẽ liền mạch và dễ đọc hơn.
+9. Nhìn chung, bài cho thấy có sự đầu tư tương đối đầy đủ cả về mặt lý thuyết lẫn triển khai kỹ thuật. Không chỉ dừng ở mô tả khái niệm, báo cáo còn phản ánh được quá trình tìm hiểu, thiết kế và liên hệ với hệ thống thực tế.
+10. Nếu trong các lần hoàn thiện sau có thể bổ sung sâu hơn về kiểm thử, bảo mật, logging, monitoring hoặc định hướng CI/CD, bài tiểu luận sẽ có chiều sâu hơn ở góc nhìn kỹ thuật phần mềm hiện đại. Dù vậy, ở hiện tại đây vẫn là một báo cáo có nội dung tốt, nghiêm túc và thể hiện được năng lực học tập cũng như tư duy hệ thống của người thực hiện.
