@@ -153,6 +153,15 @@ Phù hợp với & Hệ thống nhỏ, MVP & Hệ thống lớn, nhiều team \\
 \bottomrule
 \end{longtable}
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth,keepaspectratio]{\detokenize{pic/images.jpg}}
+    \caption{So sánh trực quan giữa Monolithic và Microservices}
+    \label{fig:monolithic-vs-microservices}
+\end{figure}
+
+Hình minh họa trên bổ sung trực quan cho bảng so sánh ở trên. Phần Monolithic cho thấy toàn bộ giao diện, business logic và data layer cùng nằm trong một khối ứng dụng và truy cập chung một cơ sở dữ liệu. Trong khi đó, phần Microservices tách hệ thống thành nhiều service nhỏ, mỗi service có phạm vi trách nhiệm riêng và có thể giao tiếp với nhau qua các lớp trung gian. Sự khác biệt này là nền tảng để giải thích vì sao các chương sau của báo cáo chuyển sang phân rã theo bounded context và service độc lập.
+
 \subsubsection{Ưu điểm của Microservices}
 \begin{itemize}
   \item Mở rộng độc lập: Chỉ cần tăng tài nguyên cho service đang chịu tải, không cần scale toàn hệ thống.
@@ -324,6 +333,18 @@ Repo hiện tại áp dụng tinh thần DDD ở mức phù hợp cho demo:
   \item Dữ liệu quan trọng như sản phẩm trong đơn hàng phải được snapshot để giữ nguyên lịch sử giao dịch.
   \item Gateway là điểm vào thống nhất và đóng vai trò proxy, giúp client không phụ thuộc vào vị trí thực của từng service.
 \end{itemize}
+
+\subsection{Biểu đồ Use Case nghiệp vụ}
+Biểu đồ dưới đây mô tả các use case nghiệp vụ chính của hệ thống e-commerce theo góc nhìn DDD. Ba actor trung tâm là \texttt{Customer}, \texttt{Staff} và \texttt{Admin}. Nhóm use case của \texttt{Customer} bao phủ toàn bộ luồng mua hàng cơ bản như đăng nhập, xem sản phẩm, thêm giỏ hàng, đặt hàng, xem lịch sử đơn và thanh toán. Nhóm use case của \texttt{Staff} và \texttt{Admin} tập trung vào các nghiệp vụ vận hành như quản lý sản phẩm, đơn hàng, người dùng và dashboard tổng quan.
+
+Sơ đồ này hữu ích cho phần DDD vì nó giúp xác định ranh giới nghiệp vụ trước khi ánh xạ sang bounded context và service. Từ use case, có thể thấy rõ hệ thống đang xoay quanh bốn miền chính: User, Product, Order và Payment. AI service không xuất hiện trong sơ đồ này để giữ phạm vi đúng với phần DDD của chương 2, nơi trọng tâm là phân rã nghiệp vụ cốt lõi của hệ thống giao dịch.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[height=0.88\textheight,keepaspectratio]{\detokenize{pic/123.png}}
+    \caption{Biểu đồ use case nghiệp vụ của hệ thống e-commerce}
+    \label{fig:ecommerce-usecase-ddd}
+\end{figure}
 
 \subsection{Thiết kế Product Service}
 \subsubsection{Biểu đồ lớp (Class Diagram)}
@@ -539,6 +560,36 @@ CREATE TABLE payment (
 \end{lstlisting}
 
 Shipping logic trong code hiện tại được gộp vào \texttt{Order} thông qua \texttt{shipping\_address}, \texttt{shipping\_city} và \texttt{shipping\_fee}. Nếu tách riêng theo mô hình tham khảo, có thể bổ sung bảng \texttt{shipment} độc lập ở giai đoạn sau.
+
+\subsection{Sơ đồ ORM của hệ thống}
+Sơ đồ ORM cho thấy cách hệ thống hiện thực các khái niệm nghiệp vụ thành model trong mã nguồn. Đây không chỉ là bản đồ của các bảng dữ liệu, mà còn là nơi thể hiện cách từng service tổ chức domain của mình ở mức object. Trong sơ đồ này, \texttt{Product} đóng vai trò trung tâm của catalog, \texttt{UserProfile} đại diện cho hồ sơ người dùng, \texttt{Order} và \texttt{OrderItem} tạo thành lõi của luồng mua hàng, còn \texttt{Payment} phản ánh bước thanh toán sau khi đơn hàng đã được tạo.
+
+Một điểm đáng chú ý là hệ thống không chỉ có các model nghiệp vụ mà còn có các model phục vụ tổng hợp dữ liệu cho dashboard. Các đối tượng như \texttt{DashboardData}, \texttt{UserSummary}, \texttt{ProductSummary}, \texttt{OrderSummary} và \texttt{PaymentSummary} đóng vai trò gom kết quả thống kê từ nhiều service thành một cấu trúc dễ trả về cho frontend. Điều này cho thấy kiến trúc không dừng ở CRUD đơn lẻ, mà còn chuẩn bị sẵn lớp dữ liệu phục vụ báo cáo, giám sát và hiển thị tổng quan.
+
+Từ góc nhìn thiết kế, sơ đồ ORM cũng cho thấy cách các model được chia thành hai nhóm rõ ràng. Nhóm thứ nhất là các model cốt lõi gắn trực tiếp với nghiệp vụ giao dịch như sản phẩm, người dùng, đơn hàng và thanh toán. Nhóm thứ hai là các model trung gian hoặc tổng hợp, dùng để ghép dữ liệu từ nhiều nguồn khác nhau. Cách tổ chức này giúp code dễ đọc hơn, dễ mở rộng hơn và phản ánh đúng ranh giới trách nhiệm giữa các phần trong hệ thống.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth,keepaspectratio]{\detokenize{diagrams/pics/orm-diagrams.jpg}}
+    \caption{Sơ đồ ORM tổng hợp của hệ thống}
+    \label{fig:ecommerce-orm-diagram}
+\end{figure}
+
+\subsection{ERD của hệ thống}
+ERD mô tả cấu trúc dữ liệu ở mức quan hệ, tức là lớp mà hệ thống thực sự lưu xuống cơ sở dữ liệu. Nếu ORM cho thấy cách các model được biểu diễn trong code, thì ERD cho thấy dữ liệu được chia thành bảng nào, mỗi bảng giữ vai trò gì và chúng liên kết với nhau ra sao. Đây là phần rất quan trọng vì nó quyết định cách dữ liệu được truy vấn, cập nhật và bảo toàn tính nhất quán.
+
+Trong sơ đồ này, bảng \texttt{Product} lưu thông tin catalog đầy đủ như SKU, tên, danh mục, giá, tồn kho, rating, thuộc tính mở rộng và trạng thái. Bảng \texttt{UserProfile} giữ hồ sơ người dùng với role, trạng thái, địa chỉ và dữ liệu mở rộng. Hai bảng \texttt{Order} và \texttt{OrderItem} thể hiện quan hệ một-nhiều giữa đơn hàng và các sản phẩm nằm trong đơn; trong đó \texttt{OrderItem} không chỉ giữ ID sản phẩm mà còn lưu snapshot như tên sản phẩm, SKU, đơn giá và thành tiền tại thời điểm mua để bảo toàn lịch sử giao dịch.
+
+Phần thanh toán được thể hiện qua bảng \texttt{Payment}, có liên kết trực tiếp với \texttt{Order} thông qua \texttt{order\_id}. Ngoài ra, sơ đồ còn cho thấy các bảng phụ trợ như \texttt{ShippingInfo} và các bảng tổng hợp phục vụ dashboard. \texttt{ShippingInfo} lưu địa chỉ và phí giao hàng, trong khi các bảng summary như \texttt{DashboardData}, \texttt{ProductSummary}, \texttt{OrderSummary}, \texttt{UserSummary}, \texttt{PaymentSummary} đóng vai trò dữ liệu dẫn xuất cho màn hình tổng quan. Điều này chứng tỏ cơ sở dữ liệu của hệ thống không chỉ lưu giao dịch, mà còn hỗ trợ tốt cho việc thống kê và quan sát vận hành.
+
+Về mặt thiết kế, ERD giúp làm rõ một nguyên tắc quan trọng của hệ thống: dữ liệu giao dịch phải được lưu đủ chi tiết để có thể truy vết lại sau này. Vì vậy, đơn hàng lưu cả \texttt{customer\_name}, \texttt{customer\_email}, \texttt{shipping\_address}, \texttt{subtotal\_amount}, \texttt{shipping\_fee} và \texttt{total\_amount}; payment lưu \texttt{gateway\_response}, \texttt{transaction\_code} và thời điểm thanh toán. Những trường này biến ERD thành nền tảng không chỉ cho thao tác nghiệp vụ trước mắt mà còn cho kiểm tra, đối soát và mở rộng sau này.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth,keepaspectratio]{\detokenize{diagrams/pics/tieu_luan - ERD.jpg}}
+    \caption{ERD tổng quan của hệ thống}
+    \label{fig:ecommerce-erd-diagram}
+\end{figure}
 
 \subsection{Biểu đồ luồng xử lý — Use Case Mua hàng (End-to-End)}
 Phần này mô tả luồng mua hàng end-to-end của hệ thống, từ lúc khách hàng xem sản phẩm đến khi tạo đơn hàng và thanh toán:
@@ -1238,6 +1289,72 @@ order = Order.objects.create(
     total_amount=subtotal + shipping_fee,
 )
 \end{lstlisting}
+
+\subsection{Minh họa giao diện frontend}
+Bộ ảnh dưới đây mô tả các màn hình chính của frontend Next.js trong quá trình demo hệ thống. Nhóm ảnh này cho thấy cách client đóng vai trò lớp trình bày trung tâm: dashboard tổng quan, màn hình đăng nhập theo email, trang đặt hàng, màn hình quản lý sản phẩm cho staff/admin và widget trợ lý AI gắn toàn cục. Các ảnh cũng phản ánh cách frontend kết nối qua gateway để lấy dữ liệu thật từ backend thay vì chỉ là giao diện tĩnh.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth,keepaspectratio]{\detokenize{screenshots/image.png}}
+    \caption{Dashboard tổng quan của hệ thống frontend}
+    \label{fig:frontend-dashboard-overview}
+\end{figure}
+
+Dashboard là màn hình trung tâm của hệ thống, nơi tập hợp các chỉ số vận hành như số sản phẩm, số người dùng, đơn hàng chờ xử lý, payment đã ghi nhận, customer đứng đầu và sản phẩm bán chạy nhất. Màn hình này thể hiện rõ vai trò của lớp client trong việc tổng hợp dữ liệu từ nhiều service thành một góc nhìn điều hành duy nhất.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth,keepaspectratio]{\detokenize{screenshots/image5.png}}
+    \caption{Dashboard chi tiết với luồng hoạt động và trạng thái hệ thống}
+    \label{fig:frontend-dashboard-detail}
+\end{figure}
+
+Ở ảnh chi tiết của dashboard, phần recent orders, live command stack và runtime notes cho thấy frontend không chỉ hiển thị số liệu, mà còn mô tả luôn trạng thái luồng nghiệp vụ đang chạy. Điều này giúp người dùng dễ theo dõi order gần nhất, trạng thái client, và cách các thao tác phía frontend đang tương tác với backend.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth,keepaspectratio]{\detokenize{screenshots/image6.png}}
+    \caption{Màn hình đăng nhập customer theo email}
+    \label{fig:frontend-customer-login}
+\end{figure}
+
+Màn hình đăng nhập customer thể hiện cơ chế xác thực demo của hệ thống. Người dùng chỉ cần nhập email là có thể đi vào luồng khách hàng, từ đó mở rộng sang trang đặt hàng hoặc dashboard. Cách làm này phù hợp với giai đoạn hiện tại vì tách riêng luồng xác thực khỏi phần xử lý nghiệp vụ, đồng thời giữ trải nghiệm demo đơn giản, nhanh và ổn định.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth,keepaspectratio]{\detokenize{screenshots/image7.png}}
+    \caption{Customer Order Portal để tạo đơn hàng}
+    \label{fig:frontend-customer-order-portal}
+\end{figure}
+
+Trang Customer Order Portal là nơi khách hàng chọn sản phẩm, nhập địa chỉ giao hàng, ghi chú đơn và xem trước tổng tiền. Cấu trúc giao diện chia thành khu vực tạo order bên trái và phần order preview bên phải, giúp người dùng nhìn ngay được sự thay đổi của subtotal, phí ship và tổng tiền trước khi gửi request xuống backend.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth,keepaspectratio]{\detokenize{screenshots/image8.png}}
+    \caption{Giao diện Staff Product Manager}
+    \label{fig:frontend-staff-product-manager}
+\end{figure}
+
+Màn hình Staff Product Manager dành cho người dùng có vai trò staff. Ở đây, frontend cung cấp form tạo sản phẩm mới cùng một vùng hiển thị sản phẩm mới nhất. Giao diện này phản ánh đúng phân quyền nghiệp vụ: staff được phép hỗ trợ quản lý catalog nhưng không cần đi sâu vào phần vận hành của admin.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth,keepaspectratio]{\detokenize{screenshots/image9.png}}
+    \caption{Giao diện Admin Product Console}
+    \label{fig:frontend-admin-product-console}
+\end{figure}
+
+Admin Product Console có bố cục tương tự trang của staff nhưng nhấn mạnh quyền quản trị cao hơn. Ảnh này cho thấy hệ thống đã tách rõ các màn hình theo vai trò, trong đó admin có thể thao tác với catalog ở mức quản lý trung tâm, hỗ trợ cho mục tiêu vận hành và kiểm soát dữ liệu toàn cục.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth,keepaspectratio]{\detokenize{screenshots/image11.png}}
+    \caption{AI Assistant widget gắn toàn cục trên frontend}
+    \label{fig:frontend-ai-assistant}
+\end{figure}
+
+Widget AI Assistant được gắn nổi ở góc màn hình và xuất hiện xuyên suốt trong giao diện. Nó thể hiện lớp hỗ trợ hội thoại tích hợp sẵn, cho phép người dùng đặt câu hỏi ngay khi đang xem dashboard hoặc thao tác đơn hàng. Về mặt trải nghiệm, đây là điểm nối giữa frontend và AI service, giúp hệ thống có cảm giác liền mạch hơn thay vì tách rời thành các màn hình độc lập.
 
 \subsection{Docker hoá toàn bộ hệ thống}
 \subsubsection{Dockerfile chuẩn cho Django Services}
