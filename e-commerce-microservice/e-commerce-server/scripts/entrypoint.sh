@@ -7,7 +7,7 @@ if [ -n "${DB_HOST}" ]; then
     sleep 2
   done
 
-  python -c "import os, psycopg2; conn=psycopg2.connect(host=os.environ['DB_HOST'], port=os.environ.get('DB_PORT','5432'), dbname=os.environ.get('DB_NAME','ecommerce_demo'), user=os.environ.get('DB_USER','postgres'), password=os.environ.get('DB_PASSWORD','postgres')); conn.autocommit=True; cur=conn.cursor(); schema=os.environ.get('DB_SCHEMA'); cur.execute(f'CREATE SCHEMA IF NOT EXISTS \"{schema}\"'); cur.close(); conn.close()" 
+  python -c "import os, psycopg2; conn=psycopg2.connect(host=os.environ['DB_HOST'], port=os.environ.get('DB_PORT','5432'), dbname=os.environ.get('DB_NAME','ecommerce_demo'), user=os.environ.get('DB_USER','postgres'), password=os.environ.get('DB_PASSWORD','postgres')); conn.autocommit=True; cur=conn.cursor(); schema=os.environ.get('DB_SCHEMA'); cur.execute(f'CREATE SCHEMA IF NOT EXISTS \"{schema}\"'); cur.close(); conn.close()"
 fi
 
 python manage.py migrate --noinput

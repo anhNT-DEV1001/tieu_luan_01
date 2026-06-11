@@ -20,7 +20,7 @@
   linkcolor=blue!50!black,
   urlcolor=blue!50!black,
   pdftitle={Bao cao du an e-commerce-microservice},
-  pdfauthor={OpenAI Codex}
+  pdfauthor={Mai The Duong}
 }
 
 \lstdefinestyle{code}{
@@ -35,17 +35,22 @@
 }
 
 \setstretch{1.2}
+\setlist[itemize]{leftmargin=1.5em,itemsep=2pt,topsep=4pt}
+\setlist[enumerate]{leftmargin=1.5em,itemsep=2pt,topsep=4pt}
+\renewcommand{\arraystretch}{1.15}
+
 \pagestyle{fancy}
 \fancyhf{}
 \rhead{E-commerce Microservice}
-\lhead{Bao cao ky thuat}
+\lhead{Báo cáo kỹ thuật}
 \cfoot{\thepage}
 
-\titleformat{\section}{\large\bfseries}{\thesection.}{0.6em}{}
+\titleformat{\section}{\large\bfseries}{}{0em}{}
 \titleformat{\subsection}{\normalsize\bfseries}{\thesubsection.}{0.6em}{}
+\titleformat{\subsubsection}{\normalsize\itshape}{\thesubsubsection.}{0.6em}{}
 
 \title{\textbf{BÁO CÁO DỰ ÁN E-COMMERCE MICROSERVICE}\\[4pt]
-\large Phân tích use-case, thiết kế hệ thống, hiện thực mã nguồn và kết quả triển khai}
+\large Phân tích kiến trúc, Domain Driven Design, thiết kế service, AI service và triển khai}
 \author{}
 \date{\today}
 
@@ -56,243 +61,1304 @@
     \vspace{1.5cm}
     {\LARGE \textbf{DỰ ÁN E-COMMERCE MICROSERVICE}\par}
     \vspace{0.8cm}
-    {\large Phân tích use-case, thiết kế hệ thống, hiện thực mã nguồn và kết quả triển khai\par}
+    {\large Phân tích use-case, thiết kế hệ thống, hiện thực mã nguồn, AI service và kết quả triển khai\par}
     \vfill
     \begin{flushleft}
-        \textbf{Họ và tên:} Nguyễn Tuấn Anh\\[0.4cm]
-        \textbf{Lớp:} E22CNPM-01\\[0.4cm]
-        \textbf{Mã sinh viên:} B22DCDT019\\[0.4cm]
-        \textbf{Đề tài:} [E-commerce Microservice]
+        \textbf{Họ và tên:} Mai Thế Dương\\[0.4cm]
+        \textbf{Lớp:} E22CNPM01\\[0.4cm]
+        \textbf{Mã sinh viên:} B22DCDT069\\[0.4cm]
+        \textbf{Đề tài:} E-commerce Microservice
     \end{flushleft}
     \vfill
     {\large \today\par}
 \end{titlepage}
 
-\maketitle
 \thispagestyle{fancy}
 
 \begin{abstract}
-Tài liệu này trình bày báo cáo kỹ thuật cho dự án \texttt{e-commerce-microservice}. Nội dung đi từ bối cảnh nghiệp vụ, use-case cốt lõi, kiến trúc microservice, cấu trúc hiện thực trong mã nguồn đến kết quả triển khai bằng Docker Compose. Hệ thống mô phỏng một nền tảng thương mại điện tử gồm quản lý người dùng, danh mục sản phẩm, đơn hàng, thanh toán, giao diện điều hành và một dịch vụ AI hỗ trợ truy vấn dữ liệu nghiệp vụ.
+Tài liệu này trình bày báo cáo kỹ thuật cho dự án \texttt{e-commerce-microservice}. Cấu trúc báo cáo được sắp xếp lại theo mục lục gốc của tài liệu tham khảo, bắt đầu từ nền tảng Monolithic, Microservices và DDD; tiếp đến là phân tích và thiết kế hệ thống e-commerce; sau đó là phần AI service và cuối cùng là phần xây dựng, triển khai, demo và đánh giá hệ thống hoàn chỉnh. Nội dung được viết lại theo đúng repo hiện tại, nên những mục như Cart, Shipping, JWT hay Nginx được trình bày ở mức kiến trúc hoặc hướng mở rộng nếu chưa có triển khai tách riêng trong mã nguồn.
 \end{abstract}
 
-\section{Giới thiệu dự án và bài toán}
-Trong bối cảnh chuyển đổi số, các hệ thống thương mại điện tử thường phải xử lý nhiều miền nghiệp vụ độc lập như khách hàng, sản phẩm, đơn hàng, thanh toán và phân tích hỗ trợ ra quyết định. Nếu tất cả được đặt trong một ứng dụng nguyên khối, phạm vi thay đổi sẽ ngày càng lớn, việc bảo trì khó khăn và năng lực mở rộng bị hạn chế.
+\tableofcontents
+\newpage
 
-Dự án \texttt{e-commerce-microservice} được xây dựng để mô phỏng một hệ thống e-commerce hiện đại theo hướng microservice. Mục tiêu của dự án không chỉ là cung cấp API CRUD đơn thuần mà còn thể hiện rõ cách các dịch vụ giao tiếp với nhau thông qua gateway, cách frontend tiêu thụ dữ liệu hợp nhất, và cách bổ sung một thành phần AI để hỗ trợ tra cứu thông tin nghiệp vụ.
+\section{CHƯƠNG 1: TỪ MONOLITHIC ĐẾN MICROSERVICES VÀ DDD}
+\subsection{Giới thiệu Monolithic Architecture}
+\subsubsection{Khái niệm}
+Monolithic Architecture là mô hình kiến trúc phần mềm trong đó toàn bộ các thành phần của hệ
+thống --- bao gồm giao diện người dùng (Presentation Layer), logic nghiệp vụ (Business Logic
+Layer) và tầng truy xuất dữ liệu (Data Access Layer) --- được tích hợp, xây dựng và triển khai
+như một khối thống nhất duy nhất. Đây là mô hình truyền thống, phổ biến trong giai đoạn đầu
+của kỹ nghệ phần mềm.
 
-\subsection{Use-case chính của hệ thống}
-Hệ thống xoay quanh các kịch bản nghiệp vụ sau:
-\begin{itemize}[leftmargin=1.5em]
-  \item Quản trị viên hoặc nhân viên xem nhanh tình trạng toàn hệ thống qua dashboard.
-  \item Người dùng được quản lý theo vai trò \texttt{admin}, \texttt{customer}, \texttt{staff}.
-  \item Sản phẩm được lưu trong catalog với thông tin giá, giảm giá, tồn kho, đánh giá và thuộc tính mở rộng.
-  \item Đơn hàng được tạo từ dữ liệu người dùng và danh sách sản phẩm, trong đó \texttt{order\_service} phải kiểm tra tính hợp lệ của người dùng và sản phẩm trước khi ghi dữ liệu.
-  \item Thanh toán được tạo dựa trên đơn hàng đã tồn tại, do \texttt{payment\_service} xác nhận từ \texttt{order\_service}.
-  \item Dashboard và chatbot AI cho phép quan sát nhanh dữ liệu nghiệp vụ, truy vấn đơn hàng, sản phẩm và khách hàng.
+\subsubsection{Cấu trúc điển hình}
+Một hệ thống Monolithic điển hình bao gồm ba tầng chính được đóng gói trong cùng một đơn vị
+triển khai:
+\begin{itemize}
+  \item Presentation Layer: Xử lý giao tiếp với người dùng cuối thông qua giao diện web hoặc ứng dụng di động.
+  \item Business Logic Layer: Chứa toàn bộ quy tắc nghiệp vụ, luồng xử lý và điều phối dữ liệu.
+  \item Data Access Layer: Đảm nhiệm việc truy vấn, lưu trữ và quản lý dữ liệu từ cơ sở dữ liệu trung tâm.
 \end{itemize}
 
-\section{Mục tiêu thiết kế}
-Các mục tiêu thiết kế chính của dự án gồm:
-\begin{itemize}[leftmargin=1.5em]
-  \item Tách biệt rõ từng miền nghiệp vụ thành các service độc lập.
-  \item Sử dụng API gateway làm điểm vào duy nhất cho frontend.
-  \item Cho phép triển khai toàn bộ hệ thống bằng một lệnh \texttt{docker compose up --build}.
-  \item Duy trì khả năng quan sát qua các endpoint tổng hợp như \texttt{/summary/}.
-  \item Kết hợp frontend Next.js và backend Django/FastAPI theo một luồng end-to-end dễ demo.
+\subsubsection{Ví dụ thực tế}
+Một hệ thống e-commerce xây dựng theo kiến trúc Monolithic sẽ tích hợp toàn bộ các chức năng
+--- quản lý sản phẩm, giỏ hàng, thanh toán, quản lý người dùng và giao hàng --- trong cùng một
+codebase duy nhất. Khi hệ thống cần cập nhật module thanh toán, toàn bộ ứng dụng phải được
+build lại và triển khai lại, kể cả những module không có thay đổi.
+
+\subsubsection{Nhược điểm chi tiết}
+\begin{itemize}
+  \item Khó mở rộng (Poor Scalability): Khi một module chịu tải cao (ví dụ: module tìm kiếm sản phẩm), hệ thống buộc phải nhân bản (scale) toàn bộ ứng dụng thay vì chỉ scale module đó, gây lãng phí tài nguyên.
+  \item Coupling cao (Tight Coupling): Các module phụ thuộc chặt chẽ lẫn nhau. Một thay đổi nhỏ trong logic nghiệp vụ có thể gây ra hiệu ứng dây chuyền, ảnh hưởng đến toàn bộ hệ thống.
+  \item Rủi ro khi triển khai (Deployment Risk): Mỗi lần phát hành phiên bản mới đều yêu cầu dừng và khởi động lại toàn hệ thống. Một lỗi nhỏ trong một module có thể làm sập toàn bộ dịch vụ.
+  \item Khó phát triển nhóm (Team Scalability): Khi nhiều nhóm phát triển cùng làm việc trên một codebase, xung đột mã nguồn (merge conflict) xảy ra thường xuyên, làm chậm tiến độ.
+  \item Hạn chế công nghệ (Technology Lock-in): Toàn bộ hệ thống bị ràng buộc với một ngôn ngữ lập trình và framework duy nhất.
 \end{itemize}
 
-\section{Kiến trúc tổng thể}
-\subsection{Thành phần hệ thống}
-Theo cấu hình trong \texttt{docker-compose.yaml}, hệ thống gồm bảy thành phần:
+\subsubsection{Khi nào nên dùng Monolithic}
+Mặc dù có nhiều hạn chế, Monolithic vẫn phù hợp trong các tình huống:
+\begin{itemize}
+  \item Hệ thống nhỏ, đơn giản với yêu cầu ít thay đổi.
+  \item Giai đoạn MVP (Minimum Viable Product) cần ra mắt nhanh.
+  \item Team phát triển ít thành viên, chưa có kinh nghiệm quản lý hệ thống phân tán.
+\end{itemize}
 
-\begin{longtable}{p{3.2cm}p{10.1cm}}
+\subsection{Microservices Architecture}
+\subsubsection{Khái niệm}
+Microservices Architecture là mô hình kiến trúc phần mềm trong đó hệ thống được phân rã thành
+tập hợp các dịch vụ nhỏ (services), mỗi dịch vụ thực hiện một chức năng nghiệp vụ riêng biệt,
+được triển khai độc lập và giao tiếp với nhau thông qua các giao thức chuẩn như REST API hoặc
+Message Queue.
+
+\subsubsection{Đặc điểm cốt lõi}
+\begin{itemize}
+  \item Mỗi service sở hữu cơ sở dữ liệu riêng biệt (Database-per-Service pattern).
+  \item Giao tiếp giữa các service thông qua API (REST/gRPC) hoặc hệ thống hàng đợi thông điệp (Message Broker).
+  \item Mỗi service có thể được triển khai, nâng cấp và mở rộng độc lập mà không ảnh hưởng đến các service khác.
+\end{itemize}
+
+\subsubsection{So sánh Monolithic và Microservices}
+\begin{longtable}{p{3.8cm}p{5.2cm}p{5.2cm}}
 \toprule
-\textbf{Thành phần} & \textbf{Vai trò} \\
+\textbf{Tiêu chí} & \textbf{Monolithic} & \textbf{Microservices} \\
 \midrule
-\texttt{client} & Frontend Next.js, hiển thị dashboard, tìm kiếm sản phẩm, tạo đơn hàng và tạo thanh toán. \\
-\texttt{gateway} & API gateway bằng Django, nhận request từ client và proxy tới các service nghiệp vụ. \\
-\texttt{user\_service} & Quản lý hồ sơ người dùng, phân vai trò, đăng nhập demo và thống kê người dùng. \\
-\texttt{product\_service} & Quản lý catalog sản phẩm, hỗ trợ lọc theo danh mục và tổng hợp dữ liệu catalog. \\
-\texttt{order\_service} & Tạo đơn hàng, hydrate thông tin người dùng và sản phẩm, tính subtotal, shipping fee và tổng tiền. \\
-\texttt{payment\_service} & Tạo bản ghi thanh toán cho đơn hàng, sinh mã giao dịch và thống kê giá trị đã xử lý. \\
-\texttt{ai\_service} & Dịch vụ FastAPI cho chatbot intent classification và truy vấn dữ liệu dạng retrieval. \\
-\texttt{postgres} & PostgreSQL dùng chung một instance, mỗi service dùng schema riêng. \\
+Đơn vị triển khai & Toàn bộ ứng dụng & Từng service độc lập \\
+Mở rộng (Scale) & Scale toàn hệ thống & Scale từng service riêng lẻ \\
+Mức độ phụ thuộc & Coupling cao & Loose Coupling \\
+Công nghệ & Một ngôn ngữ/framework & Đa ngôn ngữ, đa framework \\
+Độ phức tạp vận hành & Thấp & Cao \\
+Phù hợp với & Hệ thống nhỏ, MVP & Hệ thống lớn, nhiều team \\
 \bottomrule
 \end{longtable}
 
-\subsection{Luồng giao tiếp}
-Luồng request chính của hệ thống được tổ chức như sau:
-\begin{enumerate}[leftmargin=1.5em]
-  \item Trình duyệt truy cập frontend tại cổng \texttt{3000}.
-  \item Frontend gửi yêu cầu qua route handler nội bộ \texttt{/api/backend/*}.
-  \item Route handler tiếp tục chuyển tiếp sang \texttt{gateway}.
-  \item Gateway dựa trên tên service trong URL để chuyển tiếp tới \texttt{user\_service}, \texttt{product\_service}, \texttt{order\_service}, \texttt{payment\_service} hoặc \texttt{ai\_service}.
-  \item Các service nghiệp vụ giao tiếp đồng bộ với nhau bằng HTTP khi cần xác thực dữ liệu liên service.
-  \item Dữ liệu cuối cùng được lưu trong PostgreSQL.
-\end{enumerate}
-
-\section{Thiết kế nghiệp vụ và dữ liệu}
-\subsection{Thiết kế người dùng}
-\texttt{user\_service} quản lý thực thể \texttt{UserProfile}. Mô hình dữ liệu gồm các thuộc tính nghiệp vụ cơ bản như họ tên, email, số điện thoại, vai trò, trạng thái, điểm loyalty, địa chỉ và metadata mở rộng. Việc dùng \texttt{role} theo \texttt{TextChoices} giúp chuẩn hóa các nhóm người dùng trong toàn hệ thống.
-
-\subsection{Thiết kế sản phẩm}
-\texttt{product\_service} lưu thực thể \texttt{Product} với cấu trúc giàu thuộc tính: SKU, danh mục, thương hiệu, giá, giá giảm, tồn kho, an toàn tồn kho, kích thước, xuất xứ, bảo hành, tags, attributes và thumbnail. Thiết kế này thể hiện tư duy catalog linh hoạt, phù hợp với bài toán thương mại điện tử.
-
-\subsection{Thiết kế đơn hàng}
-\texttt{order\_service} sử dụng hai bảng:
-\begin{itemize}[leftmargin=1.5em]
-  \item \texttt{Order}: lưu thông tin khách hàng, địa chỉ giao, trạng thái, subtotal, phí vận chuyển, tổng tiền và metadata.
-  \item \texttt{OrderItem}: lưu snapshot của sản phẩm tại thời điểm mua, bao gồm tên, SKU, số lượng, đơn giá và thành tiền.
+\subsubsection{Ưu điểm của Microservices}
+\begin{itemize}
+  \item Mở rộng độc lập: Chỉ cần tăng tài nguyên cho service đang chịu tải, không cần scale toàn hệ thống.
+  \item Độ tin cậy cao: Lỗi trong một service được cô lập, không lan sang các service khác (Fault Isolation).
+  \item Tăng tốc phát triển: Các nhóm phát triển khác nhau có thể làm việc song song trên từng service mà không xung đột.
+  \item Linh hoạt công nghệ: Mỗi service có thể chọn ngôn ngữ, framework và cơ sở dữ liệu phù hợp nhất với yêu cầu nghiệp vụ của nó.
 \end{itemize}
 
-Việc lưu \texttt{product\_snapshot} là quyết định thiết kế quan trọng vì giúp giữ nguyên dấu vết nghiệp vụ ngay cả khi catalog thay đổi sau đó.
+\subsubsection{Nhược điểm của Microservices}
+\begin{itemize}
+  \item Phức tạp hệ thống: Đòi hỏi cơ sở hạ tầng phức tạp hơn (container orchestration, service discovery, load balancing).
+  \item Khó debug: Việc truy vết lỗi qua nhiều service đòi hỏi hệ thống logging và tracing tập trung.
+  \item Overhead giao tiếp: Mỗi lời gọi API giữa các service đều có độ trễ mạng, cần xử lý các tình huống timeout và retry.
+\end{itemize}
 
-\subsection{Thiết kế thanh toán}
-\texttt{payment\_service} lưu thực thể \texttt{Payment} với các trường \texttt{order\_id}, \texttt{amount}, \texttt{method}, \texttt{status}, \texttt{transaction\_code}, \texttt{gateway\_response} và \texttt{paid\_at}. Thiết kế này mô phỏng gần với hệ thống thực tế ở mức demo, đặc biệt là trường \texttt{gateway\_response} cho phép giữ metadata từ cổng thanh toán.
+\subsubsection{Nguyên tắc thiết kế}
+\begin{itemize}
+  \item Single Responsibility: Mỗi service chỉ đảm nhiệm một chức năng nghiệp vụ duy nhất.
+  \item Loose Coupling: Các service tương tác với nhau chỉ thông qua interface (API), không truy cập trực tiếp vào nội bộ hoặc cơ sở dữ liệu của service khác.
+  \item High Cohesion: Tất cả logic liên quan đến một nghiệp vụ được gom về cùng một service.
+\end{itemize}
 
-\section{Thiết kế mã nguồn}
-\subsection{Gateway làm điểm vào duy nhất}
-Gateway được cài đặt bằng Django view đơn giản nhưng hiệu quả. Hàm \texttt{proxy\_router} nhận tham số service, kiểm tra xem service có hợp lệ không, sau đó dựng URL upstream và chuyển tiếp nguyên phương thức HTTP, header và body tới service đích.
+\subsection{Domain Driven Design (DDD)}
+\subsubsection{Mục tiêu}
+Domain Driven Design (DDD) là phương pháp luận thiết kế phần mềm tập trung vào việc mô
+hình hóa hệ thống dựa trên nghiệp vụ thực tế (business domain), đảm bảo sự đồng nhất giữa
+ngôn ngữ của chuyên gia nghiệp vụ và mã nguồn của lập trình viên (Ubiquitous Language).
+DDD không phụ thuộc vào công nghệ cụ thể và đặc biệt hiệu quả khi áp dụng để xác định ranh
+giới phân rã trong kiến trúc Microservices.
 
-\begin{lstlisting}[style=code,language=Python,caption={Ý tưởng proxy tại gateway}]
-def proxy_router(request, service, subpath=""):
-    if service not in settings.SERVICE_URLS:
-        return JsonResponse({"error": "Unsupported service"}, status=404)
+\subsubsection{Các khái niệm cốt lõi}
+\begin{itemize}
+  \item Entity: Đối tượng có định danh (ID) duy nhất và vòng đời riêng biệt. Hai entity khác nhau dù có cùng thuộc tính vẫn là hai đối tượng khác nhau nếu ID khác nhau. Ví dụ: User (user\_id), Product (product\_id), Order (order\_id).
+  \item Value Object: Đối tượng không có định danh riêng, được nhận dạng hoàn toàn bằng giá trị của các thuộc tính. Ví dụ: Address (street, city, country), Money (amount, currency).
+  \item Aggregate: Một nhóm các Entity và Value Object có liên quan chặt chẽ, được xử lý như một đơn vị nhất quán. Mỗi Aggregate có một Aggregate Root là điểm truy cập duy nhất từ bên ngoài. Ví dụ: Order Aggregate gồm Order (root) + danh sách OrderItem.
+  \item Bounded Context: Ranh giới ngữ nghĩa rõ ràng trong đó một mô hình domain cụ thể có giá trị và nhất quán. Cùng một khái niệm (ví dụ: ``Product'') có thể có ý nghĩa khác nhau trong các Bounded Context khác nhau. Ví dụ: ``Product'' trong Product Context chứa thông tin chi tiết kỹ thuật, trong Order Context chỉ cần product\_id và giá.
+\end{itemize}
 
-    upstream = urljoin(settings.SERVICE_URLS[service], subpath.lstrip("/"))
-    response = requests.request(
-        method=request.method,
-        url=upstream,
-        headers=headers,
-        data=request.body or None,
-        timeout=20,
-    )
-    return HttpResponse(content=response.content, status=response.status_code)
+\subsubsection{Context Map}
+Context Map là sơ đồ thể hiện mối quan hệ giữa các Bounded Context trong hệ thống. Hai mẫu quan hệ phổ biến:
+\begin{itemize}
+  \item Shared Kernel: Hai context chia sẻ một tập con mô hình domain chung, được thống nhất và duy trì bởi cả hai team.
+  \item Customer-Supplier: Một context (Supplier) cung cấp dữ liệu/dịch vụ cho context khác (Customer). Ví dụ: Order Context phụ thuộc vào Product Context để lấy thông tin sản phẩm.
+\end{itemize}
+
+\subsubsection{DDD trong Microservices}
+Nguyên tắc cốt lõi: Một Bounded Context tương ứng với một Microservice. Cách ánh xạ này
+đảm bảo rằng mỗi service được phân rã dựa trên ranh giới nghiệp vụ tự nhiên, thay vì dựa trên
+tầng kỹ thuật (technical layer), tránh tạo ra các service quá nhỏ hoặc phụ thuộc chéo phức tạp.
+
+\subsection{Case Study: Hệ thống Quản lý Bệnh viện (Healthcare)}
+\subsubsection{Mô tả bài toán}
+Một hệ thống quản lý bệnh viện cần đáp ứng các nhu cầu nghiệp vụ sau: quản lý thông tin bệnh
+nhân, quản lý thông tin bác sĩ và điều dưỡng, và điều phối lịch khám bệnh giữa bệnh nhân và bác
+sĩ. Yêu cầu hệ thống phải có khả năng mở rộng theo từng module khi số lượng bệnh nhân tăng
+đột biến.
+
+\subsubsection{Quy trình phân rã theo DDD}
+\textbf{Bước 1 --- Xác định Domain chính:}
+
+Phân tích nghiệp vụ xác định ba domain cốt lõi:
+\begin{itemize}
+  \item Patient Management Domain: Quản lý toàn bộ thông tin và hồ sơ y tế của bệnh nhân.
+  \item Doctor Management Domain: Quản lý thông tin chuyên môn, lịch làm việc và chuyên khoa của bác sĩ.
+  \item Appointment Scheduling Domain: Điều phối, đặt lịch và quản lý trạng thái các ca khám.
+\end{itemize}
+
+\textbf{Bước 2 --- Xác định Bounded Context:}
+
+Mỗi domain được đặt trong một Bounded Context riêng biệt với ngôn ngữ nghiệp vụ nhất quán nội bộ:
+\begin{itemize}
+  \item Patient Context: Khái niệm ``bệnh nhân'' bao gồm ID, hồ sơ sức khỏe, lịch sử điều trị.
+  \item Doctor Context: Khái niệm ``bác sĩ'' bao gồm ID, chuyên khoa, lịch trực.
+  \item Appointment Context: Khái niệm ``lịch hẹn'' liên kết patient\_id và doctor\_id, không sở hữu trực tiếp thông tin chi tiết của hai bên.
+\end{itemize}
+
+\textbf{Bước 3 --- Phân rã thành Microservices:}
+
+\begin{longtable}{p{4cm}p{4cm}p{6cm}}
+\toprule
+\textbf{Bounded Context} & \textbf{Microservice} & \textbf{Trách nhiệm} \\
+\midrule
+Patient Context & patient-service & CRUD thông tin bệnh nhân, hồ sơ y tế \\
+Doctor Context & doctor-service & CRUD thông tin bác sĩ, lịch làm việc \\
+Appointment Context & appointment-service & Đặt lịch, xác nhận, hủy, tra cứu lịch hẹn \\
+\bottomrule
+\end{longtable}
+
+\textbf{Bước 4 --- Xác định quan hệ giữa các service:}
+
+Appointment Service đóng vai trò Customer, phụ thuộc vào Patient Service và Doctor Service
+(cả hai đóng vai trò Supplier). Giao tiếp được thực hiện qua REST API, không truy cập trực tiếp
+vào cơ sở dữ liệu của nhau.
+
+\subsubsection{Ví dụ API}
+\begin{itemize}
+  \item Patient Service
+  \item GET /patients/\{id\} $\rightarrow$ Lấy thông tin bệnh nhân
+  \item POST /patients $\rightarrow$ Đăng ký bệnh nhân mới
+  \item Doctor Service
+  \item GET /doctors/\{id\} $\rightarrow$ Lấy thông tin bác sĩ
+  \item GET /doctors/\{id\}/schedule $\rightarrow$ Xem lịch làm việc
+  \item Appointment Service
+  \item POST /appointments $\rightarrow$ Đặt lịch khám mới
+  \item GET /appointments/\{id\} $\rightarrow$ Tra cứu lịch hẹn
+  \item PUT /appointments/\{id\}/cancel $\rightarrow$ Hủy lịch hẹn
+\end{itemize}
+
+\subsection{Kết luận Chương 1}
+Monolithic Architecture phù hợp với các hệ thống nhỏ, đội phát triển ít thành viên và giai đoạn
+MVP cần ra mắt nhanh. Khi hệ thống tăng trưởng về quy mô và độ phức tạp, Microservices
+Architecture trở thành lựa chọn tất yếu nhờ khả năng mở rộng độc lập và tính linh hoạt cao.
+Domain Driven Design cung cấp phương pháp luận khoa học để xác định đúng ranh giới phân rã,
+đảm bảo mỗi Microservice phản ánh chính xác một miền nghiệp vụ thực tế --- đây là nền tảng
+thiết kế không thể thiếu trong các hệ thống phần mềm quy mô lớn hiện đại.
+
+\section{CHƯƠNG 2: PHÁT TRIỂN HỆ THỐNG E-COMMERCE MICROSERVICES}
+\subsection{Xác định yêu cầu hệ thống}
+\subsubsection{Yêu cầu chức năng (Functional Requirements)}
+\noindent
+Hệ thống e-commerce trong repository hiện tại được tổ chức xoay quanh các nhóm chức năng cốt lõi sau. So với tài liệu tham khảo, các ý lớn được giữ nguyên, nhưng những phần như Cart, Shipping, JWT và Nginx được ghi nhận ở mức logic hoặc hướng mở rộng nếu repo chưa tách service riêng.
+
+\begin{longtable}{p{3.9cm}p{8.9cm}}
+\toprule
+\textbf{Nhóm chức năng} & \textbf{Mô tả} \\
+\midrule
+Quản lý sản phẩm & Hỗ trợ catalog sản phẩm với SKU, danh mục, thương hiệu, giá, giảm giá, tồn kho, rating, thuộc tính mở rộng và trạng thái hiển thị. \\
+Quản lý người dùng & Quản lý hồ sơ người dùng theo vai trò \texttt{admin}, \texttt{customer}, \texttt{staff}; đăng nhập demo bằng email và xem summary theo role. \\
+Giỏ hàng & Chức năng giữ item trước checkout được xử lý ở tầng frontend và payload tạo order; trong repo hiện tại chưa tách Cart Service độc lập. \\
+Đặt hàng & Tạo đơn từ danh sách item, kiểm tra user/product qua service liên quan và lưu snapshot sản phẩm tại thời điểm mua. \\
+Thanh toán & Tạo payment dựa trên order đã tồn tại, lưu phương thức, trạng thái, mã giao dịch và phản hồi gateway demo. \\
+Giao hàng & Phí ship và địa chỉ giao hàng được lưu trong \texttt{Order}; Shipping Service riêng là hướng mở rộng. \\
+Gợi ý AI & Tích hợp \texttt{ai\_service} để chat, search, dự báo xu hướng và truy vấn dữ liệu nghiệp vụ. \\
+\bottomrule
+\end{longtable}
+
+\subsubsection{Yêu cầu phi chức năng (Non-functional Requirements)}
+\begin{itemize}
+  \item \textbf{Scalability:} Mỗi service có thể được mở rộng độc lập tùy theo tải thực tế.
+  \item \textbf{High Availability:} Lỗi ở một service không được làm gián đoạn toàn bộ luồng nghiệp vụ.
+  \item \textbf{Security:} Repo hiện tại mới ở mức login demo theo email; JWT và RBAC chi tiết được xem là hướng mở rộng phù hợp với kiến trúc gốc.
+  \item \textbf{Maintainability:} Codebase tách biệt theo service, dễ bảo trì và nâng cấp độc lập.
+  \item \textbf{Observability:} Hệ thống có summary endpoint và healthcheck; logging/monitoring chi tiết là nền tảng để phát triển tiếp.
+\end{itemize}
+
+\subsection{Phân rã hệ thống theo DDD}
+\subsubsection{Bounded Context và ánh xạ Service}
+\begin{longtable}{p{3.4cm}p{3.8cm}p{6.2cm}}
+\toprule
+\textbf{Bounded Context} & \textbf{Service / Module} & \textbf{Trách nhiệm} \\
+\midrule
+User Context & \texttt{user\_service} & Quản lý hồ sơ người dùng, vai trò, trạng thái, đăng nhập demo và summary. \\
+Product Context & \texttt{product\_service} & Quản lý catalog sản phẩm, danh mục, tồn kho, giá, rating và summary catalog. \\
+Cart Context & \texttt{client} / logic tạm & Giữ item trước checkout trong frontend hoặc payload tạo order; chưa tách service riêng. \\
+Order Context & \texttt{order\_service} & Tạo đơn hàng, validate user/product, lưu order item và snapshot sản phẩm. \\
+Payment Context & \texttt{payment\_service} & Tạo giao dịch thanh toán từ order và lưu metadata demo. \\
+Shipping Context & \texttt{order\_service} / mở rộng & Thông tin giao hàng, phí ship và trạng thái giao hàng hiện được gộp vào Order; tách service riêng là hướng phát triển tiếp theo. \\
+AI Context & \texttt{ai\_service} & Intent classification, retrieval, Neo4j và chatbot. \\
+API Composition & \texttt{gateway} & Điểm vào backend, proxy request tới các service. \\
+Presentation & \texttt{client} & Dashboard, quản lý, tạo đơn, login và chatbot. \\
+\bottomrule
+\end{longtable}
+
+\subsubsection{Nguyên tắc thiết kế}
+Repo hiện tại áp dụng tinh thần DDD ở mức phù hợp cho demo:
+\begin{itemize}
+  \item Mỗi bounded context có ranh giới rõ ràng và được ánh xạ sang một service riêng hoặc một module logic rõ ràng.
+  \item Không dùng foreign key xuyên service; các service xác thực dữ liệu thông qua REST API.
+  \item Dữ liệu quan trọng như sản phẩm trong đơn hàng phải được snapshot để giữ nguyên lịch sử giao dịch.
+  \item Gateway là điểm vào thống nhất và đóng vai trò proxy, giúp client không phụ thuộc vào vị trí thực của từng service.
+\end{itemize}
+
+\subsection{Thiết kế Product Service}
+\subsubsection{Biểu đồ lớp (Class Diagram)}
+Trong repo hiện tại, \texttt{Product} là thực thể trung tâm của catalog. Khác với tài liệu tham khảo có tách \texttt{Category}, \texttt{Book}, \texttt{Electronics} và \texttt{Fashion}, code của bạn dùng một mô hình linh hoạt hơn: category là một thuộc tính của \texttt{Product}, còn các chi tiết mở rộng được lưu trong \texttt{JSONField}.
+
+\begin{itemize}
+  \item Product là aggregate root.
+  \item \texttt{sku} và \texttt{slug} dùng để định danh nghiệp vụ.
+  \item \texttt{status} mô tả trạng thái hiển thị của sản phẩm.
+  \item \texttt{attributes} và \texttt{dimensions} cho phép mở rộng theo từng nhóm hàng mà không phải sửa schema nhiều lần.
+\end{itemize}
+
+\subsubsection{Data Model (sinh từ Class Diagram)}
+\begin{lstlisting}[style=code,caption={Data model rút gọn của Product Service}]
+CREATE TABLE product (
+    id               SERIAL PRIMARY KEY,
+    sku              VARCHAR(64) UNIQUE NOT NULL,
+    name             VARCHAR(255) NOT NULL,
+    slug             VARCHAR(255) UNIQUE NOT NULL,
+    category         VARCHAR(120) NOT NULL,
+    brand            VARCHAR(120) NOT NULL,
+    price            DECIMAL(12, 2) NOT NULL,
+    discount_price   DECIMAL(12, 2),
+    currency         VARCHAR(10) NOT NULL DEFAULT 'VND',
+    stock_quantity   INTEGER NOT NULL DEFAULT 0,
+    safety_stock     INTEGER NOT NULL DEFAULT 0,
+    rating           DECIMAL(3, 2) NOT NULL DEFAULT 0,
+    weight_grams     INTEGER NOT NULL DEFAULT 0,
+    dimensions       JSONB NOT NULL DEFAULT '{}',
+    color            VARCHAR(64),
+    material         VARCHAR(120),
+    size             VARCHAR(32),
+    origin_country   VARCHAR(120),
+    warranty_months  INTEGER NOT NULL DEFAULT 0,
+    description      TEXT,
+    tags             JSONB NOT NULL DEFAULT '[]',
+    attributes       JSONB NOT NULL DEFAULT '{}',
+    thumbnail_url    TEXT,
+    status           VARCHAR(20) NOT NULL DEFAULT 'active',
+    published_at     TIMESTAMP NULL,
+    created_at       TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at       TIMESTAMP NOT NULL DEFAULT NOW()
+);
 \end{lstlisting}
 
-Thiết kế này đem lại ba lợi ích:
-\begin{itemize}[leftmargin=1.5em]
-  \item Frontend chỉ cần biết một backend base URL.
-  \item Có thể thay đổi vị trí hoặc số lượng service mà không phải sửa logic client nhiều nơi.
-  \item Thuận tiện để chèn thêm xác thực, logging hay rate limiting trong tương lai.
+\subsubsection{API}
+\begin{longtable}{p{3.2cm}p{3.4cm}p{6.8cm}}
+\toprule
+\textbf{Method} & \textbf{Endpoint} & \textbf{Mô tả} \\
+\midrule
+GET & \texttt{/api/products/} & Lấy danh sách sản phẩm; hỗ trợ filter theo \texttt{category}. \\
+POST & \texttt{/api/products/} & Tạo sản phẩm mới. \\
+GET & \texttt{/api/products/\textless id\textgreater/} & Lấy chi tiết một sản phẩm. \\
+GET & \texttt{/api/products/summary/} & Tổng hợp số lượng sản phẩm, rating trung bình và danh sách danh mục. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Thiết kế User Service}
+\subsubsection{Biểu đồ lớp (Class Diagram)}
+Trong repo hiện tại, User Service dùng \texttt{UserProfile} thay vì kế thừa \texttt{AbstractUser}. Mô hình này phù hợp với đồ án vì tập trung vào hồ sơ người dùng và các thuộc tính nghiệp vụ hơn là cơ chế auth đầy đủ.
+
+\begin{itemize}
+  \item \texttt{UserProfile} là entity trung tâm.
+  \item \texttt{Role} và \texttt{Status} là các \texttt{TextChoices} tương đương enum nghiệp vụ.
+  \item \texttt{metadata} cho phép lưu thông tin mở rộng mà không làm phình schema.
 \end{itemize}
 
-\subsection{Tạo đơn hàng bằng kiểm tra liên service}
-Phần quan trọng nhất của \texttt{order\_service} là luồng tạo đơn hàng. Khi nhận yêu cầu mới, service:
-\begin{enumerate}[leftmargin=1.5em]
-  \item Gọi \texttt{user\_service} để kiểm tra \texttt{user\_id}.
-  \item Duyệt từng item và gọi \texttt{product\_service} để lấy dữ liệu sản phẩm.
-  \item Tính \texttt{line\_total}, \texttt{subtotal}, \texttt{shipping\_fee} và \texttt{total\_amount}.
-  \item Tạo \texttt{Order} trước, sau đó \texttt{bulk\_create} các \texttt{OrderItem}.
+\subsubsection{Data Model}
+\begin{lstlisting}[style=code,caption={Data model rút gọn của User Service}]
+CREATE TABLE user_profile (
+    id              SERIAL PRIMARY KEY,
+    full_name       VARCHAR(255) NOT NULL,
+    email           VARCHAR(255) UNIQUE NOT NULL,
+    phone           VARCHAR(20),
+    role            VARCHAR(20) NOT NULL DEFAULT 'customer',
+    status          VARCHAR(20) NOT NULL DEFAULT 'active',
+    loyalty_points  INTEGER NOT NULL DEFAULT 0,
+    address         VARCHAR(255),
+    city            VARCHAR(120),
+    country         VARCHAR(120) NOT NULL DEFAULT 'Vietnam',
+    avatar_url      TEXT,
+    metadata        JSONB NOT NULL DEFAULT '{}',
+    created_at      TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMP NOT NULL DEFAULT NOW()
+);
+\end{lstlisting}
+
+\subsubsection{Phân quyền RBAC}
+\begin{longtable}{p{2.8cm}p{10.2cm}}
+\toprule
+\textbf{Vai trò} & \textbf{Quyền hạn} \\
+\midrule
+Admin & Quản lý toàn bộ tài nguyên hệ thống, quản lý catalog, theo dõi dashboard và dữ liệu vận hành. \\
+Staff & Xem và xử lý dữ liệu vận hành, hỗ trợ kiểm tra sản phẩm, đơn hàng và thanh toán. \\
+Customer & Xem sản phẩm, đăng nhập demo, tạo đơn hàng và tương tác với chatbot AI. \\
+\bottomrule
+\end{longtable}
+
+\subsubsection{API}
+\begin{longtable}{p{3.2cm}p{3.4cm}p{6.8cm}}
+\toprule
+\textbf{Method} & \textbf{Endpoint} & \textbf{Mô tả} \\
+\midrule
+GET & \texttt{/api/users/} & Lấy danh sách người dùng; hỗ trợ lọc theo role. \\
+POST & \texttt{/api/users/} & Tạo người dùng mới. \\
+POST & \texttt{/api/users/login/} & Đăng nhập demo bằng email, kiểm tra trạng thái active. \\
+GET & \texttt{/api/users/summary/} & Đếm tổng số user và phân bố theo role. \\
+GET & \texttt{/api/users/\textless id\textgreater/} & Lấy chi tiết một người dùng. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Thiết kế Cart Service}
+\subsubsection{Biểu đồ lớp}
+Trong tài liệu tham khảo, Cart Service là một bounded context riêng với \texttt{Cart} và \texttt{CartItem}. Ở repository hiện tại, chức năng này chưa được tách thành microservice độc lập. Thay vào đó:
+\begin{itemize}
+  \item Frontend giữ trạng thái chọn sản phẩm trước khi checkout.
+  \item Payload tạo order đóng vai trò ``giỏ hàng tạm'' khi gửi xuống backend.
+\end{itemize}
+
+Nếu tách riêng theo đúng mô hình gốc, biểu đồ lớp logic sẽ có dạng:
+
+\begin{lstlisting}[style=code,caption={Mô hình logic Cart Service}]
+Cart 1 --- * CartItem
+\end{lstlisting}
+
+\subsubsection{Data Model}
+Trong repo hiện tại chưa có bảng \texttt{cart} và \texttt{cart\_item}. Nếu mở rộng theo đúng hướng của tài liệu gốc, hai bảng này sẽ lưu trạng thái giỏ hàng tạm và số lượng item trước khi checkout.
+
+\subsection{Thiết kế Order Service}
+\subsubsection{Biểu đồ lớp}
+Order Service là nơi ràng buộc nghiệp vụ quan trọng nhất của hệ thống. Khác với tài liệu gốc có thêm thao tác từ cart, code hiện tại tạo order trực tiếp từ payload item đã được frontend chuẩn bị sẵn. Hai entity chính là \texttt{Order} và \texttt{OrderItem}.
+
+\begin{itemize}
+  \item \texttt{Order} là aggregate root.
+  \item \texttt{OrderItem} mang snapshot của sản phẩm tại thời điểm mua.
+  \item Trạng thái order trong repo: \texttt{pending}, \texttt{confirmed}, \texttt{shipping}, \texttt{completed}, \texttt{cancelled}.
+\end{itemize}
+
+\subsubsection{Data Model}
+\begin{lstlisting}[style=code,caption={Data model rút gọn của Order Service}]
+CREATE TABLE orders (
+    id               SERIAL PRIMARY KEY,
+    user_id          INTEGER NOT NULL,
+    customer_name    VARCHAR(255) NOT NULL,
+    customer_email   VARCHAR(255) NOT NULL,
+    shipping_address VARCHAR(255) NOT NULL,
+    shipping_city    VARCHAR(120) NOT NULL,
+    status           VARCHAR(20) NOT NULL DEFAULT 'pending',
+    subtotal_amount  DECIMAL(12, 2) NOT NULL,
+    shipping_fee     DECIMAL(12, 2) NOT NULL DEFAULT 0,
+    total_amount     DECIMAL(12, 2) NOT NULL,
+    notes            TEXT,
+    metadata         JSONB NOT NULL DEFAULT '{}',
+    created_at       TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at       TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE order_item (
+    id               SERIAL PRIMARY KEY,
+    order_id         INTEGER REFERENCES orders(id) ON DELETE CASCADE,
+    product_id       INTEGER NOT NULL,
+    product_name     VARCHAR(255) NOT NULL,
+    sku              VARCHAR(64) NOT NULL,
+    quantity         INTEGER NOT NULL,
+    unit_price       DECIMAL(12, 2) NOT NULL,
+    line_total       DECIMAL(12, 2) NOT NULL,
+    product_snapshot JSONB NOT NULL DEFAULT '{}'
+);
+\end{lstlisting}
+
+\subsubsection{Luồng nghiệp vụ}
+Khi tạo đơn hàng, service sẽ:
+\begin{enumerate}
+  \item Kiểm tra người dùng qua \texttt{user\_service}.
+  \item Duyệt từng item và kiểm tra sản phẩm qua \texttt{product\_service}.
+  \item Tính \texttt{subtotal\_amount}, lấy \texttt{shipping\_fee} mặc định hoặc từ payload, rồi cộng ra \texttt{total\_amount}.
+  \item Tạo \texttt{Order} trước, sau đó ghi các \texttt{OrderItem} bằng \texttt{bulk\_create}.
 \end{enumerate}
 
-\begin{lstlisting}[style=code,language=Python,caption={Rút gọn logic tạo đơn hàng}]
+\subsection{Thiết kế Payment Service \& Shipping Service}
+\subsubsection{Biểu đồ lớp}
+Trong repository hiện tại, Payment Service đã được triển khai. Shipping Service chưa tách riêng thành một microservice, nên phần này được trình bày theo hai lớp:
+\begin{itemize}
+  \item \textbf{Payment} là phần đã hiện thực.
+  \item \textbf{Shipping} là phần gộp vào \texttt{Order} và là hướng mở rộng nếu muốn bám sát mô hình của tài liệu gốc.
+\end{itemize}
+
+\begin{lstlisting}[style=code,caption={Mô hình logic Payment và Shipping}]
+Payment                          Shipping (mở rộng)
+-------                          -------------------
+order_id                         order_id
+amount                           address
+status                           status
+paid_at                          created_at
+\end{lstlisting}
+
+\subsubsection{Data Model}
+\begin{lstlisting}[style=code,caption={Data model rút gọn của Payment Service}]
+CREATE TABLE payment (
+    id                SERIAL PRIMARY KEY,
+    order_id          INTEGER NOT NULL UNIQUE,
+    payer_name        VARCHAR(255) NOT NULL,
+    amount            DECIMAL(12, 2) NOT NULL,
+    currency          VARCHAR(10) NOT NULL DEFAULT 'VND',
+    method            VARCHAR(20) NOT NULL,
+    status            VARCHAR(20) NOT NULL DEFAULT 'pending',
+    transaction_code  VARCHAR(64) UNIQUE NOT NULL,
+    gateway_response  JSONB NOT NULL DEFAULT '{}',
+    paid_at           TIMESTAMP NULL,
+    created_at        TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at        TIMESTAMP NOT NULL DEFAULT NOW()
+);
+\end{lstlisting}
+
+Shipping logic trong code hiện tại được gộp vào \texttt{Order} thông qua \texttt{shipping\_address}, \texttt{shipping\_city} và \texttt{shipping\_fee}. Nếu tách riêng theo mô hình tham khảo, có thể bổ sung bảng \texttt{shipment} độc lập ở giai đoạn sau.
+
+\subsection{Biểu đồ luồng xử lý — Use Case Mua hàng (End-to-End)}
+Trong tài liệu gốc, phần này là sequence diagram đầy đủ nhiều bước qua Cart, Payment và Shipping. Với repo hiện tại, luồng được rút gọn nhưng vẫn giữ đúng logic nghiệp vụ chính:
+
+\begin{longtable}{p{1.4cm}p{3.6cm}p{8.2cm}}
+\toprule
+\textbf{Bước} & \textbf{Đối tượng} & \textbf{Hành động} \\
+\midrule
+1 & Client $\rightarrow$ Gateway & Gọi \texttt{/api/users/login/} để đăng nhập demo bằng email. \\
+2 & Gateway $\rightarrow$ user\_service & Kiểm tra người dùng, trạng thái active và trả dữ liệu hồ sơ. \\
+3 & Client $\rightarrow$ Gateway & Gọi \texttt{/api/products/} hoặc \texttt{/api/products/summary/} để lấy catalog. \\
+4 & Gateway $\rightarrow$ product\_service & Trả danh sách sản phẩm và các trường chi tiết. \\
+5 & Client $\rightarrow$ Gateway & Gửi \texttt{POST /api/orders/} với \texttt{user\_id} và danh sách item. \\
+6 & Gateway $\rightarrow$ order\_service & Tạo order, validate user và từng sản phẩm qua service liên quan. \\
+7 & order\_service $\rightarrow$ product\_service & Lấy giá hiện tại và snapshot sản phẩm. \\
+8 & order\_service $\rightarrow$ Gateway $\rightarrow$ Client & Trả về order đã tạo với \texttt{status: pending}. \\
+9 & Client $\rightarrow$ Gateway & Gửi \texttt{POST /api/payments/} cho order vừa tạo. \\
+10 & Gateway $\rightarrow$ payment\_service & Validate order, tạo payment và cập nhật trạng thái giao dịch. \\
+11 & payment\_service $\rightarrow$ order\_service & Tra cứu order để lấy thông tin khách hàng và tổng tiền. \\
+12 & payment\_service $\rightarrow$ Gateway $\rightarrow$ Client & Trả về kết quả thanh toán thành công và trạng thái xử lý tiếp theo. \\
+\bottomrule
+\end{longtable}
+
+Điểm khác biệt so với tài liệu gốc là repo hiện tại chưa tách Cart Service và Shipping Service riêng, nên các bước đó được gộp vào luồng order/payment và các trường \texttt{shipping\_fee}, \texttt{shipping\_address} trong \texttt{Order}.
+
+\subsection{Checklist đánh giá Chương 2}
+\begin{longtable}{p{8.8cm}p{4.8cm}}
+\toprule
+\textbf{Hạng mục} & \textbf{Trạng thái} \\
+\midrule
+Yêu cầu chức năng và phi chức năng & Đã trình bày \\
+Phân rã hệ thống theo DDD & Đã trình bày \\
+Thiết kế Product Service & Đã trình bày \\
+Thiết kế User Service & Đã trình bày \\
+Thiết kế Cart Service & Mô hình logic / chưa tách service \\
+Thiết kế Order Service & Đã trình bày \\
+Thiết kế Payment \& Shipping & Payment đã hiện thực, Shipping là hướng mở rộng \\
+Luồng mua hàng end-to-end & Đã trình bày \\
+Data Model từng service & Đã trình bày theo code hiện tại \\
+\bottomrule
+\end{longtable}
+
+\subsection{Kết luận Chương 2}
+Hệ thống e-commerce trong repository hiện tại vẫn đi theo kiến trúc Microservices với các bounded context chính là User, Product, Order, Payment, AI và lớp gateway/client. So với tài liệu tham khảo, Chapter 2 đã được giữ đúng các ý lớn, nhưng được điều chỉnh để khớp với code thực tế: Cart và Shipping hiện là mô hình logic hoặc hướng mở rộng, còn Order/Payment/User/Product là phần đã hiện thực đầy đủ. Nhờ vậy, nội dung vừa bám sát bố cục gốc, vừa phản ánh trung thực những gì code của bạn đang có.
+
+\section{CHƯƠNG 3: AI SERVICE CHO TƯ VẤN SẢN PHẨM}
+\subsection{Mục tiêu và Bối cảnh}
+AI Service được thiết kế để hỗ trợ truy vấn nghiệp vụ bằng ngôn ngữ tự nhiên cho hệ thống e-commerce. Trong repository hiện tại, service này phục vụ chat, tra cứu dữ liệu, healthcheck và dự báo xu hướng đơn giản. Điểm quan trọng là AI không đứng tách rời, mà được đặt đúng vào luồng nghiệp vụ của \texttt{user\_service}, \texttt{product\_service} và \texttt{order\_service}.
+
+\subsection{Kiến trúc tổng thể AI Service}
+Khác với tài liệu tham khảo vốn mô tả một kiến trúc AI mang tính khái quát hơn, repo hiện tại hiện thực AI Service bằng một ứng dụng \texttt{FastAPI} độc lập. Service này có bốn lớp chính:
+\begin{itemize}
+  \item Lớp tiếp nhận yêu cầu: \texttt{/health}, \texttt{/chat}, \texttt{/search}, \texttt{/trends}.
+  \item Lớp nhận diện intent cục bộ: mô hình \texttt{numpy\_mlp\_text\_classifier} và rule-based fallback.
+  \item Lớp truy xuất tri thức: lấy dữ liệu từ các service nghiệp vụ và ưu tiên Neo4j.
+  \item Lớp sinh phản hồi: OpenAI, Gemini hoặc fallback local nếu chưa cấu hình provider.
+\end{itemize}
+
+\begin{longtable}{p{3.6cm}p{4.2cm}p{5.8cm}}
+\toprule
+\textbf{Thành phần} & \textbf{File chính} & \textbf{Vai trò} \\
+\midrule
+Intent model & \texttt{train\_models\_kaggle.py} & Huấn luyện mô hình intent cục bộ và sinh metadata. \\
+Retriever & \texttt{retrieval.py} & Xây dựng tài liệu RAG, xếp hạng và truy vấn Neo4j. \\
+Neo4j ingest & \texttt{ingest\_to\_neo4j.py} & Đồng bộ dữ liệu sang đồ thị và tạo vector index. \\
+API runtime & \texttt{main.py} & Cung cấp các endpoint chat, search, trends và healthcheck. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Dữ liệu đầu vào}
+AI Service lấy dữ liệu từ ba nguồn chính:
+\begin{itemize}
+  \item Dataset huấn luyện intent: \texttt{ai\_service/data/intent\_seed\_dataset.csv}.
+  \item Trạng thái mô hình: \texttt{ai\_service/models/intent\_mlp\_model.npz} và \texttt{training\_metadata.json}.
+  \item Dữ liệu nghiệp vụ thực tế từ user, product và order service, sau đó đồng bộ sang Neo4j.
+\end{itemize}
+
+\subsection{Pipeline RAG Chat}
+Pipeline chat của hệ thống được thiết kế theo đúng tinh thần requirement.md: đầu vào là câu hỏi người dùng, đầu ra là câu trả lời có ngữ cảnh, không bịa dữ liệu và có thể truy vết nguồn.
+
+\begin{longtable}{p{1.5cm}p{3.8cm}p{7.2cm}}
+\toprule
+\textbf{Bước} & \textbf{Khối xử lý} & \textbf{Mô tả} \\
+\midrule
+1 & Frontend chat widget & Người dùng nhập câu hỏi từ khung chat nổi ở góc màn hình. \\
+2 & Next.js proxy & Request được chuyển qua \texttt{/api/backend/ai/chat} để tránh CORS và giữ backend URL ẩn với UI. \\
+3 & AI runtime & \texttt{handle\_chat()} resolve intent bằng model local hoặc rule-based fallback. \\
+4 & Retrieval layer & Nếu câu hỏi thuộc product/order/user, service truy xuất Neo4j trước, sau đó mới fallback TF-IDF. \\
+5 & LLM router & OpenAI, Gemini hoặc local fallback sinh phản hồi JSON chuẩn hoá. \\
+6 & Response assembly & AI service gắn thêm \texttt{sources} và trả lại cho frontend. \\
+7 & UI rendering & Chatbot hiển thị câu trả lời ngay trong widget, giữ luồng hội thoại liên tục. \\
+\bottomrule
+\end{longtable}
+
+\begin{lstlisting}[style=code,caption={Luồng gửi chat từ frontend tới AI service}]
+const res = await fetch("/api/backend/ai/chat", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ message: userMessage.text }),
+});
+
+const data = await res.json();
+setMessages((prev) => [
+  ...prev,
+  { id: (Date.now() + 1).toString(), sender: "bot", text: data.response || "Sorry, I didn't get that." },
+]);
+\end{lstlisting}
+
+\subsection{Cấu trúc mã nguồn và dữ liệu thử nghiệm}
+Theo yêu cầu, phần AI service cần có cấu trúc mã nguồn rõ ràng và kèm dữ liệu thử nghiệm cụ thể. Trong repo hiện tại, cấu trúc cốt lõi được chia như sau:
+
+\begin{longtable}{p{4.2cm}p{8.3cm}}
+\toprule
+\textbf{Thư mục / file} & \textbf{Vai trò} \\
+\midrule
+\texttt{ai\_service/main.py} & Điều phối runtime, intent resolution, RAG chat, search, trends và healthcheck. \\
+\texttt{ai\_service/retrieval.py} & Chuẩn hoá tài liệu truy xuất, tạo scope và xếp hạng kết quả tìm kiếm. \\
+\texttt{ai\_service/ingest\_to\_neo4j.py} & Đồng bộ dữ liệu từ các service sang Neo4j và tạo vector index. \\
+\texttt{ai\_service/train\_models\_kaggle.py} & Huấn luyện mô hình intent local và sinh metadata. \\
+\texttt{e-commerce-client/src/components/chat/chatbot.tsx} & Khung chat nổi ở frontend, gửi câu hỏi tới AI service. \\
+\texttt{e-commerce-client/src/app/layout.tsx} & Gắn chatbot vào layout toàn cục để dùng ở mọi trang. \\
+\bottomrule
+\end{longtable}
+
+Dữ liệu thử nghiệm có thể lấy trực tiếp từ dataset intent hoặc từ ngữ cảnh nghiệp vụ e-commerce. Ba mẫu tiêu biểu:
+
+\begin{longtable}{p{4.2cm}p{3.1cm}p{3.1cm}p{2.2cm}}
+\toprule
+\textbf{Câu hỏi} & \textbf{Intent dự kiến} & \textbf{Scope} & \textbf{Ghi chú} \\
+\midrule
+\texttt{where is my order} & \texttt{order\_status} & \texttt{orders} & Chạy qua retrieval đơn hàng. \\
+\texttt{show customer profile} & \texttt{customer\_lookup} & \texttt{users} & Truy xuất hồ sơ khách hàng. \\
+\texttt{co san pham nao dang ban chay} & \texttt{product\_inquiry} & \texttt{products} & Trả về tài liệu sản phẩm. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Thành phần 1 --- Mô hình Deep Learning cục bộ}
+\subsubsection{Lý do lựa chọn}
+Trong tài liệu tham khảo, phần này được mô tả như một mô hình TensorFlow/Keras hoặc LSTM. Tuy nhiên, trong code hiện tại, bài toán intent classification được giải bằng một mô hình \texttt{NumPy MLP} gọn nhẹ. Cách làm này phù hợp với repo vì:
+\begin{itemize}
+  \item chạy offline, không phụ thuộc framework nặng;
+  \item huấn luyện nhanh trên dataset nhỏ;
+  \item đủ tốt cho lớp nhận diện intent trước khi chuyển sang RAG hoặc LLM.
+\end{itemize}
+
+\subsubsection{Kiến trúc mô hình chi tiết}
+Mô hình cục bộ dùng vector đặc trưng ký tự/từ, sau đó đi qua hai lớp hidden và một lớp softmax đầu ra. Dữ liệu huấn luyện được chuẩn hoá bằng các nhãn nghiệp vụ như \texttt{greeting}, \texttt{product\_inquiry}, \texttt{order\_status}, \texttt{complaint}, \texttt{farewell}, \texttt{customer\_lookup}, \texttt{unknown}.
+
+\begin{lstlisting}[style=code,caption={Rút gọn phần huấn luyện và lưu mô hình local}]
+def train_mlp(
+    train_df: pd.DataFrame,
+    valid_df: pd.DataFrame,
+    max_features: int,
+    hidden_size: int,
+    hidden_size_2: int,
+    epochs: int,
+    learning_rate: float,
+    weight_decay: float,
+    random_state: int,
+) -> dict:
+    rng = np.random.default_rng(random_state)
+    labels = sorted(train_df["intent"].unique().tolist())
+    vocab = build_vocab(train_df["text"].tolist(), max_features=max_features)
+    x_train = vectorize_texts(train_df["text"].tolist(), vocab)
+    y_train = np.array([labels.index(label) for label in train_df["intent"]], dtype=np.int64)
+    y_train_oh = one_hot(y_train, len(labels))
+    input_size = max(1, x_train.shape[1])
+    w1 = rng.normal(0, np.sqrt(2.0 / input_size), size=(input_size, hidden_size)).astype(np.float32)
+    ...
+    np.savez_compressed(
+        LOCAL_MODEL_PATH,
+        w1=w1, b1=b1, w2=w2, b2=b2, w3=w3, b3=b3,
+        vocab=np.array(json.dumps(vocab, ensure_ascii=False)),
+        labels=np.array(json.dumps(labels, ensure_ascii=False)),
+    )
+    return {
+        "model_path": str(LOCAL_MODEL_PATH),
+        "model_type": "numpy_mlp_text_classifier",
+        "architecture": {
+            "input_features": int(len(vocab)),
+            "hidden_layers": [int(hidden_size), int(hidden_size_2)],
+            "activation": "relu",
+            "output": "softmax",
+        },
+    }
+\end{lstlisting}
+
+\subsubsection{Quy trình huấn luyện và metadata}
+Script huấn luyện không chỉ tạo mô hình mà còn sinh toàn bộ metadata để service runtime đọc lại khi khởi động.
+\begin{lstlisting}[style=code,caption={Sinh metadata và dữ liệu fine-tune}]
+metadata = {
+    "provider": "local_numpy",
+    "training_type": "supervised_neural_intent_classification",
+    "dataset_path": str(dataset_path),
+    "row_count": int(len(df)),
+    "train_rows": int(len(train_df)),
+    "validation_rows": int(len(valid_df)),
+    "intents": sorted(df["intent"].unique().tolist()),
+    "local_model": local_model,
+    "base_model": args.base_model,
+    "train_jsonl": str(TRAIN_JSONL_PATH),
+    "validation_jsonl": str(VALID_JSONL_PATH),
+    "job": None,
+}
+\end{lstlisting}
+
+\subsection{Thành phần 2 --- Knowledge Graph với Neo4j}
+\subsubsection{Lý do chọn Graph Database}
+Neo4j phù hợp với bài toán e-commerce vì dữ liệu không chỉ là bảng đơn lẻ mà còn có quan hệ chéo giữa sản phẩm, khách hàng, đơn hàng và tài liệu mô tả. Điều này giúp AI Service trả lời tốt hơn các truy vấn kiểu:
+\begin{itemize}
+  \item khách hàng nào đã đặt đơn nào;
+  \item đơn nào chứa sản phẩm nào;
+  \item sản phẩm nào thuộc danh mục hoặc thương hiệu nào.
+\end{itemize}
+
+\subsubsection{Thiết kế Graph Schema}
+\begin{itemize}
+  \item Node: \texttt{Product}, \texttt{Customer}, \texttt{Order}, \texttt{Document}, \texttt{Category}, \texttt{Brand}.
+  \item Quan hệ: \texttt{BELONGS\_TO}, \texttt{MADE\_BY}, \texttt{PLACED}, \texttt{CONTAINS}, \texttt{ABOUT}.
+\end{itemize}
+
+\begin{lstlisting}[style=code,caption={Tạo constraint và vector index trong Neo4j}]
+def _ensure_indexes(driver) -> None:
+    driver.execute_query("""
+        CREATE CONSTRAINT document_doc_id IF NOT EXISTS
+        FOR (d:Document) REQUIRE d.doc_id IS UNIQUE
+    """, database_=NEO4J_DATABASE)
+    driver.execute_query(f"""
+        CREATE VECTOR INDEX {NEO4J_VECTOR_INDEX} IF NOT EXISTS
+        FOR (d:Document) ON d.embedding
+        OPTIONS {{indexConfig: {{
+            `vector.dimensions`: {EMBEDDING_DIMENSIONS},
+            `vector.similarity_function`: 'cosine'
+        }}}}
+    """, database_=NEO4J_DATABASE)
+\end{lstlisting}
+
+\begin{lstlisting}[style=code,caption={Upsert dữ liệu sản phẩm, đơn hàng và tài liệu vào Neo4j}]
+def _upsert_product(driver, payload: Dict) -> None:
+    driver.execute_query(
+        """
+        MERGE (p:Product {id: $id})
+        SET p.name = $name,
+            p.sku = $sku,
+            p.category = $category,
+            p.brand = $brand,
+            p.price = $price,
+            p.discount_price = $discount_price,
+            p.stock_quantity = $stock_quantity,
+            p.rating = $rating,
+            p.payload_json = $payload_json
+        WITH p
+        MERGE (c:Category {name: coalesce($category, 'Unknown')})
+        MERGE (b:Brand {name: coalesce($brand, 'Unknown')})
+        MERGE (p)-[:BELONGS_TO]->(c)
+        MERGE (p)-[:MADE_BY]->(b)
+        """,
+        id=str(payload.get("id", "")),
+        name=payload.get("name"),
+        sku=payload.get("sku"),
+        category=payload.get("category"),
+        brand=payload.get("brand"),
+        price=payload.get("price"),
+        discount_price=payload.get("discount_price"),
+        stock_quantity=payload.get("stock_quantity"),
+        rating=payload.get("rating"),
+        payload_json=_safe_json(payload),
+        database_=NEO4J_DATABASE,
+    )
+\end{lstlisting}
+
+\subsection{Thành phần 3 --- RAG (Retrieval-Augmented Generation)}
+\subsubsection{Tại sao cần RAG?}
+RAG giúp AI trả lời dựa trên dữ liệu thật của hệ thống thay vì chỉ dựa vào suy đoán của mô hình. Với e-commerce, đây là phần quan trọng nhất để tra cứu sản phẩm, khách hàng và đơn hàng một cách có căn cứ.
+
+\subsubsection{Kiến trúc Multi-Retrieval}
+Repo hiện tại triển khai một lớp retrieval đa nguồn:
+\begin{itemize}
+  \item ưu tiên truy vấn chính xác theo entity ID;
+  \item nếu không có, dùng Neo4j vector index;
+  \item nếu Neo4j chưa sẵn sàng, quay về TF-IDF local.
+\end{itemize}
+
+\begin{lstlisting}[style=code,caption={Cấu trúc RetrievalDoc và hàm tìm kiếm}]
+@dataclass
+class RetrievalDoc:
+    entity_type: str
+    entity_id: str
+    title: str
+    text: str
+    payload: Dict[str, Any]
+    score: float = 0.0
+
+def search_retrieval_docs(query: str, top_k: int = 3, scope: Optional[str] = None) -> List[RetrievalDoc]:
+    normalized_query = (query or "").strip()
+    if not normalized_query:
+        return []
+    if is_neo4j_configured():
+        neo4j_docs = _search_neo4j_docs(normalized_query, top_k=top_k, scope=scope)
+        if neo4j_docs:
+            return neo4j_docs
+    ranked_docs = _rank_docs(normalized_query, build_retrieval_docs(query=normalized_query, scope=scope))
+    return ranked_docs[: max(1, top_k)]
+\end{lstlisting}
+
+\begin{lstlisting}[style=code,caption={Xây dựng tài liệu truy xuất cho product, order và user}]
+def _build_product_doc(product: Dict[str, Any]) -> RetrievalDoc:
+    searchable_text = " | ".join([
+        _normalize(product.get("name")),
+        _normalize(product.get("sku")),
+        _normalize(product.get("category")),
+        _normalize(product.get("brand")),
+    ])
+    title = f"{product.get('name', 'Product')} ({product.get('sku', '')})"
+    return RetrievalDoc("product", str(product.get("id", "")), title, searchable_text, product)
+
+def _build_order_doc(order: Dict[str, Any]) -> RetrievalDoc:
+    searchable_text = " | ".join([
+        _normalize(order.get("id")),
+        _normalize(order.get("customer_name")),
+        _normalize(order.get("customer_email")),
+        _normalize(order.get("status")),
+    ])
+    title = f"Order #{order.get('id', '')} - {order.get('customer_name', 'Customer')}"
+    return RetrievalDoc("order", str(order.get("id", "")), title, searchable_text, order)
+\end{lstlisting}
+
+\subsubsection{LLM Router Agent}
+AI Service có thể dùng OpenAI hoặc Gemini nếu được cấu hình biến môi trường. Nếu không có provider, hệ thống vẫn chạy nhờ phản hồi fallback nội bộ. Đây là điểm giúp demo luôn ổn định ngay cả khi chưa có API key.
+
+\subsection{Kết hợp Hybrid --- Tích hợp ba thành phần}
+Luồng hybrid của AI Service trong repo hiện tại là:
+\begin{enumerate}
+  \item Nhận message từ client.
+  \item Resolve intent bằng mô hình local hoặc rule-based fallback.
+  \item Nếu cần, truy xuất dữ liệu từ retrieval layer và Neo4j.
+  \item Gọi LLM provider để sinh câu trả lời có cấu trúc JSON.
+  \item Trả lại response cùng danh sách sources.
+\end{enumerate}
+
+\begin{lstlisting}[style=code,caption={Resolve intent và xử lý endpoint chat}]
+def _resolve_intent(message: str) -> tuple[Optional[str], float, str]:
+    neural_intent, neural_confidence = _predict_neural_intent(message)
+    rule_based_intent = _detect_rule_based_intent(message)
+
+    if neural_intent and neural_confidence >= 0.35:
+        return neural_intent, neural_confidence, "local_neural_mlp"
+    if rule_based_intent:
+        return rule_based_intent, 0.25, "rule_based"
+    if neural_intent:
+        return neural_intent, neural_confidence, "local_neural_mlp_low_confidence"
+    return None, 0.0, "none"
+
+@router.post("/chat", response_model=ChatResponse)
+def handle_chat(request: ChatRequest):
+    message = (request.message or "").strip()
+    resolved_intent, intent_confidence, intent_source = _resolve_intent(message)
+    rag_scope = _scope_for_intent(resolved_intent, message)
+    should_use_rag = resolved_intent in ("product_inquiry", "order_status", "customer_lookup") or _is_rag_query(message)
+    docs = search_retrieval_docs(message, top_k=3, scope=rag_scope) if should_use_rag else []
+    response = _llm_chat(message, docs, resolved_intent or ("knowledge_lookup" if docs else None))
+    response.sources.append({
+        "entity_type": "intent_classifier",
+        "entity_id": intent_source,
+    "title": resolved_intent or "unknown",
+    "score": round(intent_confidence, 4),
+    })
+    return response
+\end{lstlisting}
+
+\begin{lstlisting}[style=code,caption={Endpoint search và trend trong AI Service}]
+@router.post("/search", response_model=SearchResponse)
+def search_knowledge_base(request: SearchRequest):
+    docs = search_retrieval_docs(request.query, top_k=request.top_k)
+    results = [
+        SearchHit(
+            entity_type=doc.entity_type,
+            entity_id=doc.entity_id,
+            title=doc.title,
+            score=doc.score,
+            payload=doc.payload,
+        )
+        for doc in docs
+    ]
+    return SearchResponse(query=request.query, scope=detect_scope(request.query), results=results)
+
+@router.post("/trends", response_model=TrendResponse)
+def predict_trend(request: TrendRequest):
+    recent_months = request.historical_sales[-3:]
+    avg_recent = sum(recent_months) / len(recent_months)
+    overall_avg = sum(request.historical_sales) / len(request.historical_sales)
+    prediction = avg_recent * 1.05
+    if prediction > overall_avg:
+        trend = "UPWARD"
+    elif prediction < overall_avg:
+        trend = "DOWNWARD"
+    else:
+        trend = "STABLE"
+    return TrendResponse(predicted_sales=round(prediction, 2), trend=trend)
+\end{lstlisting}
+
+\subsection{Đánh giá \& Triển khai}
+Để đáp ứng phần đánh giá và triển khai trong requirement.md, AI Service cần được nhìn theo ba mức chất lượng đầu ra:
+\begin{itemize}
+  \item \textbf{Không có RAG}: khi câu hỏi chỉ là chào hỏi, tạm biệt hoặc phản hồi cảm xúc, service trả lời trực tiếp bằng intent response.
+  \item \textbf{RAG cục bộ}: khi query gắn với mã đơn, SKU, email hoặc tên khách hàng, retrieval sẽ lấy đúng entity từ Neo4j hoặc TF-IDF.
+  \item \textbf{LLM có kiểm soát}: khi LLM provider được bật, prompt chỉ nhận context đã được thu gọn và buộc trả JSON có cấu trúc.
+\end{itemize}
+
+\begin{longtable}{p{4.2cm}p{3.6cm}p{4.8cm}}
+\toprule
+\textbf{Kiểu đầu vào} & \textbf{Đường xử lý} & \textbf{Đặc trưng đầu ra} \\
+\midrule
+Greeting / farewell & Rule-based + fallback local & Câu trả lời ngắn, ổn định, không cần retrieval. \\
+Product / order / user lookup & Intent model + Neo4j/TFIDF + LLM & Trả lời có nguồn, có ngữ cảnh, tránh bịa dữ liệu. \\
+Trend request & Lực tính toán số học đơn giản & Trả về xu hướng \texttt{UPWARD/DOWNWARD/STABLE}. \\
+\bottomrule
+\end{longtable}
+
+Quy trình triển khai AI Service trong repo hiện tại:
+\begin{enumerate}
+  \item Cấu hình biến môi trường cho \texttt{AI\_PROVIDER}, \texttt{OPENAI\_API\_KEY} hoặc \texttt{GEMINI\_API\_KEY}, \texttt{NEO4J\_URI}.
+  \item Chạy script đồng bộ dữ liệu sang Neo4j bằng \texttt{ingest\_to\_neo4j.py}.
+  \item Khởi động AI service cùng các service nghiệp vụ bằng Docker Compose.
+  \item Mở frontend, nhập câu hỏi từ widget chat và kiểm tra phản hồi.
+  \item Dùng endpoint \texttt{/api/ai/search} và \texttt{/api/ai/trends} để kiểm thử riêng từng nhánh.
+\end{enumerate}
+
+\subsection{Tích hợp hệ thống Chat với dữ liệu}
+Phần tích hợp chat với dữ liệu được thể hiện rõ trong cả backend và frontend:
+\begin{itemize}
+  \item Backend: \texttt{main.py} gọi \texttt{search\_retrieval\_docs()} để lấy product, order hoặc customer có liên quan.
+  \item Retrieval: \texttt{retrieval.py} xây dựng văn bản ngữ nghĩa từ dữ liệu thực của hệ thống, không dùng câu trả lời sinh tự do từ đầu.
+  \item Frontend: \texttt{chatbot.tsx} gửi message đến \texttt{/api/backend/ai/chat} và render trực tiếp text trả về.
+\end{itemize}
+
+\begin{lstlisting}[style=code,caption={Khung chat nổi trên frontend được gắn toàn cục}]
+import Chatbot from "@/components/chat/chatbot";
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="vi">
+      <body>
+        {children}
+        <Chatbot />
+      </body>
+    </html>
+  );
+}
+\end{lstlisting}
+
+\subsection{Tích hợp AI vào hệ thống thương mại điện tử}
+AI được tích hợp vào e-commerce không chỉ ở mức trả lời câu hỏi, mà còn ở mức hỗ trợ vận hành:
+\begin{itemize}
+  \item trong dashboard, admin/staff có thể tra cứu user, product, order và payment;
+  \item trong customer order portal, người dùng chọn hàng, tạo đơn và giữ được ngữ cảnh đặt hàng;
+  \item chatbot tư vấn được gắn ở mọi trang, nên người dùng có thể hỏi ngay khi đang xem dashboard hoặc thao tác đơn hàng.
+\end{itemize}
+
+Frontend của hệ thống đang đặt các màn hình chính theo vai trò:
+\begin{itemize}
+  \item \texttt{/} - dashboard điều hành;
+  \item \texttt{/customer/login} - đăng nhập demo theo email;
+  \item \texttt{/customer/order} - tạo đơn hàng;
+  \item \texttt{/staff/products} và \texttt{/admin/products} - quản lý sản phẩm;
+  \item chatbot AI - widget nổi ở góc dưới phải, dùng như trợ lý tư vấn xuyên suốt.
+\end{itemize}
+
+\subsection{Triển khai AI Service vào hệ thống Microservices}
+AI Service được triển khai như một service độc lập trong hệ sinh thái microservices:
+\begin{itemize}
+  \item chạy trên port riêng;
+  \item đọc dữ liệu từ user/product/order service thông qua HTTP;
+  \item có CORS cấu hình rộng để phục vụ frontend demo;
+  \item có healthcheck trả về trạng thái provider, local model, Neo4j và metadata huấn luyện.
+\end{itemize}
+
+\begin{lstlisting}[style=code,caption={Healthcheck của AI Service}]
+@router.get("/health")
+def healthcheck():
+    return {
+        "status": "ok",
+        "service": "ai_service",
+        "ai_provider": AI_PROVIDER,
+        "active_provider": _active_provider(),
+        "neo4j_configured": is_neo4j_configured(),
+        "local_intent_model_configured": bool(intent_model),
+        "training_metadata": training_metadata or None,
+    }
+\end{lstlisting}
+
+\subsection{Checklist đánh giá Chương 3}
+\begin{longtable}{p{8.8cm}p{4.8cm}}
+\toprule
+\textbf{Hạng mục} & \textbf{Trạng thái} \\
+\midrule
+Intent classification cục bộ & Đã hiện thực bằng NumPy MLP. \\
+Retrieval trên dữ liệu nghiệp vụ & Đã hiện thực qua Neo4j và TF-IDF fallback. \\
+Knowledge graph & Đã hiện thực với Product, Customer, Order, Document. \\
+LLM provider fallback & Đã hỗ trợ OpenAI, Gemini và local fallback. \\
+Endpoint chat/search/trends & Đã hiện thực trong FastAPI. \\
+Healthcheck và metadata & Đã hiện thực và trả về trạng thái runtime. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Kết luận Chương 3}
+Chương 3 cho thấy AI Service trong repository hiện tại không phải là một chatbot rời rạc, mà là một service có đủ dữ liệu, retrieval, graph và lớp sinh phản hồi. So với tài liệu tham khảo, bố cục vẫn giữ đúng các ý lớn, nhưng phần nội dung đã được điều chỉnh để phản ánh chính xác code của bạn: intent model là \texttt{NumPy MLP}, RAG dùng Neo4j vector index và TF-IDF fallback, còn AI runtime chạy qua các endpoint \texttt{/chat}, \texttt{/search}, \texttt{/trends} và \texttt{/health}.
+
+\section{CHƯƠNG 4: XÂY DỰNG HỆ THỐNG HOÀN CHỈNH}
+\subsection{Kiến trúc tổng thể hệ thống}
+\subsubsection{Tổng quan}
+Phần vận hành của hệ thống trong repository hiện tại xoay quanh ba lớp chính: frontend Next.js, gateway trung gian và các service nghiệp vụ Django/FastAPI. Khác với tài liệu tham khảo, repo hiện tại chưa tách Cart và Shipping thành service độc lập; thay vào đó, các vai trò này được gom vào \texttt{order\_service} và \texttt{payment\_service}. Dù vậy, cấu trúc tổng thể vẫn đi đúng tinh thần Microservices với tách biệt service, database riêng và giao tiếp qua HTTP.
+
+\begin{longtable}{p{3.4cm}p{3.8cm}p{6.2cm}}
+\toprule
+\textbf{Thành phần} & \textbf{Cổng / vị trí} & \textbf{Trách nhiệm} \\
+\midrule
+Frontend client & \texttt{3000} & Dashboard, đăng nhập demo, đặt hàng và widget chat AI. \\
+Gateway & \texttt{8000} & Nhận request từ client và chuyển tiếp tới service đích. \\
+User service & \texttt{8001} & Quản lý user profile, role, trạng thái và summary. \\
+Product service & \texttt{8002} & Quản lý catalog sản phẩm, danh mục, rating và tồn kho. \\
+Order service & \texttt{8003} & Tạo đơn hàng, validate user/product và lưu snapshot item. \\
+Payment service & \texttt{8004} & Tạo payment từ order và lưu trạng thái giao dịch. \\
+AI service & \texttt{8005} & Chat, search, trends, retrieval và healthcheck. \\
+PostgreSQL & \texttt{5433 -> 5432} & Lưu dữ liệu quan hệ của các service nghiệp vụ. \\
+Neo4j & \texttt{7474/7687} & Lưu graph, document embedding và vector index. \\
+\bottomrule
+\end{longtable}
+
+\subsubsection{Cấu trúc thư mục dự án}
+Code backend nằm trong \texttt{e-commerce-server}, frontend nằm trong \texttt{e-commerce-client}, còn file orchestration ở gốc dự án là \texttt{docker-compose.yaml}. Cách bố trí này làm cho từng service có thể build riêng nhưng vẫn được ghép lại thành một hệ thống thống nhất khi chạy demo.
+
+\subsection{API Gateway --- Nginx}
+\subsubsection{Vai trò và trách nhiệm}
+Trong tài liệu gốc, API Gateway được mô tả bằng Nginx. Ở repository hiện tại, vai trò tương đương được hiện thực bằng hai lớp: một route proxy trong Next.js ở phía client và một gateway Django ở backend. Cặp lớp này đảm nhiệm việc chuẩn hoá đường dẫn, giảm phụ thuộc trực tiếp từ giao diện tới từng service, và gom lỗi upstream về một format dễ xử lý hơn.
+
+\begin{lstlisting}[style=code,caption={Next.js proxy route chuyển request sang backend}]
+const backendBaseUrl =
+  process.env.ECOMMERCE_API_BASE_URL?.replace(/\/$/, "") ?? "http://127.0.0.1:8000";
+
+async function proxy(request: NextRequest, params: { path: string[] }) {
+  const backendPath = normalizeBackendPath(request.nextUrl.pathname);
+  const search = request.nextUrl.search;
+  const target = `${backendBaseUrl}/api/${backendPath}${search}`;
+  const response = await fetch(target, {
+    method: request.method,
+    headers: {
+      "Content-Type": request.headers.get("content-type") ?? "application/json",
+    },
+    body: request.method === "GET" ? undefined : await request.text(),
+    cache: "no-store",
+  });
+  ...
+}
+\end{lstlisting}
+
+\subsubsection{Cấu hình gateway trong frontend}
+Frontend gọi backend qua helper thống nhất thay vì fetch trực tiếp đến nhiều URL rời rạc. Điều này giúp đổi base URL dễ hơn và giữ luồng call đồng nhất.
+
+\begin{lstlisting}[style=code,caption={Helper gọi backend từ frontend}]
+export async function requestBackendJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const safePath = path.replace(/^\/+/, "");
+  const response = await fetch(`/api/backend/${safePath}`, {
+    ...init,
+    headers: {
+      "Content-Type": "application/json",
+      ...(init?.headers ?? {}),
+    },
+  });
+
+  if (!response.ok) {
+    const detail = await extractErrorMessage(response);
+    const message = detail ? `HTTP ${response.status}: ${detail}` : `HTTP ${response.status}: Request failed`;
+    throw new Error(message);
+  }
+
+  return (await response.json()) as T;
+}
+\end{lstlisting}
+
+\subsection{Authentication --- JWT}
+\subsubsection{Luồng xác thực hiện tại}
+Repo hiện tại chưa triển khai JWT đầy đủ như bản tài liệu tham khảo. Thay vào đó, hệ thống đang dùng luồng demo-login theo email để phục vụ đồ án: người dùng nhập email, backend trả về hồ sơ user, frontend lưu session local và định tuyến theo role. Đây là một bước đệm hợp lý cho giai đoạn hoàn thiện JWT thật sau này.
+
+\begin{lstlisting}[style=code,caption={Luồng login demo theo email ở frontend}]
+const response = await requestBackendJson<LoginResponse>("users/login/", {
+  method: "POST",
+  body: JSON.stringify({ email }),
+});
+
+saveSessionUser(response.user);
+if (response.user.role === "customer") {
+  router.push("/customer/order");
+  return;
+}
+\end{lstlisting}
+
+\subsubsection{Cài đặt JWT trong User Service (hướng mở rộng)}
+Nếu khớp theo tài liệu gốc, JWT nên được phát hành từ \texttt{user\_service}, sau đó gateway kiểm tra token trước khi chuyển request tới service đích. Trong repository hiện tại, phần này mới ở mức hướng phát triển tiếp theo, chưa có access token/refresh token thực sự.
+
+\begin{itemize}
+  \item Hiện trạng: login demo, session local, role-based redirect.
+  \item Hướng mở rộng: phát hành access token, refresh token và middleware xác thực ở gateway.
+  \item Giá trị kiến trúc: chuẩn hoá quyền truy cập trước khi đi vào service nghiệp vụ.
+\end{itemize}
+
+\subsection{Giao tiếp giữa các Service}
+\subsubsection{Pattern gọi API nội bộ có xử lý lỗi}
+Từ docker compose đến helper frontend đều cho thấy một mô hình giao tiếp khá rõ ràng: frontend không gọi trực tiếp service con mà đi qua proxy; service nghiệp vụ thì gọi nhau qua URL nội bộ trong mạng Docker. Phần lỗi được gom lại ở helper frontend và response upstream, giúp UI có thể hiển thị thông báo dễ hiểu hơn.
+
+\begin{itemize}
+  \item Frontend -> Next.js proxy -> gateway -> service đích.
+  \item \texttt{order\_service} gọi \texttt{user\_service} và \texttt{product\_service} để validate dữ liệu.
+  \item \texttt{payment\_service} gọi \texttt{order\_service} để lấy thông tin đơn trước khi tạo payment.
+  \item \texttt{ai\_service} đọc dữ liệu từ user/product/order và Neo4j để thực hiện retrieval.
+\end{itemize}
+
+\begin{lstlisting}[style=code,caption={Định tuyến nội bộ giữa các service trong docker compose}]
+gateway:
+  environment:
+    USER_SERVICE_URL: http://ecommerce-user-service:8001/api/users/
+    PRODUCT_SERVICE_URL: http://ecommerce-product-service:8002/api/products/
+    ORDER_SERVICE_URL: http://ecommerce-order-service:8003/api/orders/
+    PAYMENT_SERVICE_URL: http://ecommerce-payment-service:8004/api/payments/
+    AI_SERVICE_URL: http://ecommerce-ai-service:8005/api/ai/
+
+order_service:
+  environment:
+    USER_SERVICE_URL: http://ecommerce-user-service:8001/api/users/
+    PRODUCT_SERVICE_URL: http://ecommerce-product-service:8002/api/products/
+\end{lstlisting}
+
+\subsection{Luồng mua hàng End-to-End --- Code hoàn chỉnh}
+\subsubsection{Luồng nghiệp vụ ở frontend}
+Trong code hiện tại, người dùng customer đăng nhập theo email, chuyển sang trang đặt hàng, chọn sản phẩm, gửi order lên backend, rồi tạo payment cho order vừa sinh. Phí ship được tính ngay trong frontend preview và được đẩy xuống backend như một phần của payload order.
+
+\begin{lstlisting}[style=code,caption={Tạo đơn hàng từ giao diện customer order}]
+const order = await requestBackendJson<Order>("orders/", {
+  method: "POST",
+  body: JSON.stringify({
+    user_id: sessionUserId,
+    shipping_address: shippingAddress,
+    shipping_city: shippingCity,
+    notes,
+    items: items.map((item) => ({
+      product_id: item.productId,
+      quantity: item.quantity,
+    })),
+  }),
+});
+\end{lstlisting}
+
+\begin{lstlisting}[style=code,caption={Dashboard tạo payment từ order}]
+const payment = await requestBackendJson<{ id: number; order_id: number }>("payments/", {
+  method: "POST",
+  body: JSON.stringify({
+    order_id: paymentForm.orderId,
+    method: paymentForm.method,
+    source: paymentForm.source,
+  }),
+});
+\end{lstlisting}
+
+\subsubsection{Xử lý trong Order Service và Payment Service}
+Order Service là nơi gom logic validate user/product, tính subtotal và snapshot item. Payment Service lấy order đã tồn tại, tạo payment và ghi lại trạng thái giao dịch demo. Vì repo hiện tại chưa tách Shipping Service riêng, nên \texttt{shipping\_fee} và địa chỉ giao hàng được gộp vào \texttt{Order}.
+
+\begin{lstlisting}[style=code,caption={Logic tạo order và payment rút gọn theo code hiện tại}]
+user = _fetch_user(payload["user_id"])
 for item in items_payload:
     product = _fetch_product(item["product_id"])
     quantity = int(item["quantity"])
     unit_price = Decimal(str(product["current_price"]))
-    line_total = unit_price * quantity
-    subtotal += line_total
+    subtotal += unit_price * quantity
 
 order = Order.objects.create(
     user_id=user["id"],
+    customer_name=user["full_name"],
+    customer_email=user["email"],
+    shipping_address=payload.get("shipping_address") or user.get("address") or "Demo address",
+    shipping_city=payload.get("shipping_city") or user.get("city") or "Ho Chi Minh City",
     subtotal_amount=subtotal,
     shipping_fee=shipping_fee,
     total_amount=subtotal + shipping_fee,
 )
 \end{lstlisting}
 
-Điểm đáng chú ý là service không dùng foreign key xuyên service. Tính đúng đắn nghiệp vụ được đảm bảo bằng HTTP call ở thời điểm xử lý.
+\subsection{Docker hoá toàn bộ hệ thống}
+\subsubsection{Dockerfile chuẩn cho Django Services}
+Mỗi service Django đều chạy cùng một pattern: build image riêng, mount code vào container, dùng \texttt{entrypoint.sh} để chờ DB, migrate và seed dữ liệu. Cách này làm cho các service đồng nhất về quy trình khởi động, giảm tình trạng service lên trước database.
 
-\subsection{Thanh toán dựa trên đơn hàng hiện có}
-\texttt{payment\_service} áp dụng cách tiếp cận tương tự. Trước khi tạo thanh toán, hệ thống gọi \texttt{order\_service} để lấy dữ liệu đơn hàng. Sau đó payment được sinh với \texttt{transaction\_code} ngẫu nhiên và metadata trả về từ gateway demo.
+\subsubsection{docker-compose.yml hoàn chỉnh}
+File \texttt{docker-compose.yaml} ở gốc dự án ghép toàn bộ hệ thống lại thành một stack chạy được ngay trên máy local. Service hiện có trong repo gồm gateway, client, user, product, order, payment, ai, PostgreSQL và Neo4j.
 
-\begin{lstlisting}[style=code,language=Python,caption={Tạo thanh toán từ đơn hàng}]
-order = _fetch_order(payload["order_id"])
-payment = Payment.objects.create(
-    order_id=order["id"],
-    payer_name=order["customer_name"],
-    amount=order["total_amount"],
-    method=payload.get("method", Payment.PaymentMethod.MOMO),
-    transaction_code=uuid.uuid4().hex[:16].upper(),
-)
+\begin{lstlisting}[style=code,caption={Trích cấu hình docker compose thực tế của repo}]
+services:
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "${DB_EXPOSE_PORT:-5433}:5432"
+
+  neo4j:
+    image: neo4j:5.26
+    ports:
+      - "${NEO4J_HTTP_PORT:-7474}:7474"
+      - "${NEO4J_BOLT_PORT:-7687}:7687"
+
+  gateway:
+    build:
+      context: ./e-commerce-server/gateway
+    ports:
+      - "${GATEWAY_PORT:-8000}:8000"
+    depends_on:
+      - user_service
+      - product_service
+      - order_service
+      - payment_service
+      - ai_service
 \end{lstlisting}
 
-\subsection{Frontend Next.js và lớp proxy nội bộ}
-Frontend được viết bằng Next.js. Một route handler tại \texttt{src/app/api/backend/[...path]/route.ts} đóng vai trò proxy lớp thứ hai. Thành phần này rất hữu ích khi frontend cần gọi backend từ cả server side lẫn client side mà vẫn giữ cùng một domain logic.
+\subsection{Demo kết quả --- Minh hoạ API calls}
+\subsubsection{Khởi động hệ thống}
+Trong repo hiện tại, một lệnh \texttt{docker compose up --build} sẽ dựng toàn bộ stack. Nếu muốn theo dõi trạng thái container, có thể dùng \texttt{docker compose ps} hoặc \texttt{docker compose logs}.
 
-\begin{lstlisting}[style=code,language=TypeScript,caption={Proxy nội bộ trong Next.js}]
-const backendBaseUrl =
-  process.env.ECOMMERCE_API_BASE_URL?.replace(/\/$/, "")
-  ?? "http://127.0.0.1:8000";
-
-const target = `${backendBaseUrl}/api/${backendPath}${search}`;
-const response = await fetch(target, {
-  method: request.method,
-  body: request.method === "GET" ? undefined : await request.text(),
-  cache: "no-store",
-});
-\end{lstlisting}
-
-Dashboard phía client đồng thời tải nhiều nguồn dữ liệu bằng \texttt{Promise.all}, ví dụ user summary, product summary, order summary và payment summary. Đây là thiết kế hợp lý để giảm thời gian chờ giao diện.
-
-\subsection{Dịch vụ AI hỗ trợ truy vấn nghiệp vụ}
-Ngoài các service CRUD, dự án còn có \texttt{ai\_service} viết bằng FastAPI. Thành phần này:
-\begin{itemize}[leftmargin=1.5em]
-  \item Nạp mô hình intent classification và vectorizer từ file pickle.
-  \item Kết hợp rule-based intent detection với fallback model.
-  \item Thực hiện retrieval cho dữ liệu product, order và customer.
-  \item Trả về phản hồi có \texttt{sources} để giải thích kết quả.
-\end{itemize}
-
-Đây là điểm mở rộng đáng giá vì thể hiện xu hướng tích hợp AI như một service độc lập thay vì nhúng trực tiếp vào backend nghiệp vụ.
-
-\section{Triển khai và vận hành}
-\subsection{Môi trường triển khai}
-Dự án được đóng gói bằng Docker Compose. Các cổng mặc định:
-\begin{itemize}[leftmargin=1.5em]
-  \item Client: \texttt{http://localhost:3000}
-  \item Gateway: \texttt{http://localhost:8000}
-  \item PostgreSQL: \texttt{localhost:5433}
-\end{itemize}
-
-Lệnh chạy chuẩn:
-\begin{lstlisting}[style=code,basicstyle=\ttfamily\small]
+\begin{lstlisting}[style=code,caption={Khởi động toàn bộ hệ thống}]
 cd e-commerce-microservice
 docker compose up --build
 \end{lstlisting}
 
-\subsection{Kết quả đạt được}
-Từ cấu trúc hiện có trong mã nguồn, dự án đã đạt được các kết quả chính:
-\begin{itemize}[leftmargin=1.5em]
-  \item Xây dựng thành công hệ thống e-commerce đa dịch vụ với luồng nghiệp vụ xuyên service.
-  \item Chuẩn hóa điểm vào backend thông qua gateway.
-  \item Hỗ trợ dashboard quan sát dữ liệu người dùng, sản phẩm, đơn hàng và thanh toán.
-  \item Cung cấp các endpoint summary phục vụ thống kê nhanh như tổng số người dùng, doanh thu, top customer và best-selling product.
-  \item Tích hợp dịch vụ AI hỗ trợ tra cứu và chatbot nghiệp vụ.
-  \item Triển khai toàn bộ hệ thống qua một file Compose duy nhất, giảm độ phức tạp vận hành.
+\subsubsection{Demo luồng mua hàng bằng curl}
+Luồng kiểm thử phù hợp với code hiện tại gồm: healthcheck, lấy summary, lấy danh sách sản phẩm, tạo order, tạo payment và kiểm tra AI chat.
+
+\begin{lstlisting}[style=code,caption={Một số lệnh kiểm thử API}]
+curl http://localhost:8000/health/
+curl http://localhost:8000/api/users/summary/
+curl http://localhost:8000/api/products/summary/
+curl http://localhost:8000/api/orders/summary/
+curl http://localhost:8000/api/payments/summary/
+curl -X POST http://localhost:8000/api/ai/chat -H "Content-Type: application/json" -d "{\"message\":\"where is my order\"}"
+\end{lstlisting}
+
+\subsection{Logging và Monitoring}
+\subsubsection{Cấu hình Logging tập trung (Django)}
+Hiện tại logging chủ yếu đi qua stdout/stderr của container, nên cách quan sát thực tế là dùng \texttt{docker compose logs}. Cách làm này phù hợp cho đồ án, nhưng nếu đưa lên production thì nên đẩy log về hệ thống tập trung để dễ truy vết xuyên service.
+
+\subsubsection{Monitoring với Prometheus + Grafana}
+Repo hiện tại chưa triển khai đầy đủ Prometheus/Grafana, nhưng về mặt kiến trúc đây là lớp nên bổ sung tiếp theo nếu muốn hoàn thiện đúng như tài liệu tham khảo. Các metric đáng theo dõi là response time, error rate, throughput và số lượng request theo service.
+
+\begin{itemize}
+  \item Hiện trạng: chưa có scrape target và dashboard metrics thực sự trong repo.
+  \item Hướng mở rộng: thêm Prometheus, Grafana và metric endpoint cho từng service.
+  \item Lợi ích: nhìn thấy bottleneck thật ở gateway, order hoặc AI service.
 \end{itemize}
 
-\subsection{Đánh giá kỹ thuật}
-Ưu điểm của dự án:
-\begin{itemize}[leftmargin=1.5em]
-  \item Phân tách service rõ ràng theo bounded context.
-  \item Dữ liệu đơn hàng và thanh toán được snapshot hóa hợp lý.
-  \item Luồng frontend đến backend thống nhất, dễ demo và dễ mở rộng.
-  \item Có thêm service AI làm nổi bật hướng phát triển hiện đại.
+\subsection{Đánh giá hệ thống}
+\subsubsection{Hiệu năng}
+Repo hiện tại chưa có script benchmark chính thức như bản tài liệu tham khảo, nên phần đánh giá hiệu năng nên hiểu là đánh giá kiến trúc và luồng xử lý. Dựa trên pipeline hiện tại, các endpoint summary và list dữ liệu sẽ nhẹ hơn nhiều so với luồng tạo order hay chat AI, vì hai luồng sau phải đi qua validate liên service và/hoặc RAG.
+
+\begin{longtable}{p{4.2cm}p{3.2cm}p{5.6cm}}
+\toprule
+\textbf{Nhóm endpoint} & \textbf{Mức chi phí} & \textbf{Lý do} \\
+\midrule
+Summary/list endpoints & Thấp & Chủ yếu đọc dữ liệu và trả JSON. \\
+Order/payment flow & Trung bình & Có validate user/product và ghi DB. \\
+AI chat/search & Cao nhất & Đi qua retrieval, Neo4j và LLM router. \\
+\bottomrule
+\end{longtable}
+
+\subsubsection{Khả năng mở rộng}
+Kiến trúc hiện tại vẫn giữ đúng tinh thần scale theo service. Nếu \texttt{product\_service} hoặc \texttt{ai\_service} trở thành bottleneck, ta có thể tăng tài nguyên cho riêng service đó mà không cần kéo cả hệ thống đi cùng. Phần chưa hoàn thiện so với tài liệu tham khảo là Nginx riêng, JWT thực sự và message queue cho các tác vụ bất đồng bộ.
+
+\subsubsection{Ưu điểm hệ thống}
+\begin{itemize}
+  \item Fault isolation rõ hơn monolithic vì mỗi service chạy container riêng.
+  \item Frontend có proxy thống nhất, giảm phụ thuộc vào địa chỉ backend.
+  \item AI service tách riêng nên cập nhật logic tư vấn không kéo theo code nghiệp vụ.
+  \item Dữ liệu quan trọng của order được snapshot, tránh mất lịch sử khi sản phẩm thay đổi.
+  \item Cấu trúc Docker Compose giúp chạy lại demo nhanh và nhất quán.
 \end{itemize}
 
-Giới hạn hiện tại:
-\begin{itemize}[leftmargin=1.5em]
-  \item Các lời gọi liên service đang là đồng bộ, chưa có retry hoặc circuit breaker.
-  \item Chưa có cơ chế xác thực tập trung và phân quyền API ở gateway.
-  \item Cơ sở dữ liệu vẫn dùng chung một PostgreSQL instance, phù hợp cho demo hơn là production quy mô lớn.
-  \item Test tự động trong repository còn mỏng.
+\subsubsection{Nhược điểm và hướng cải thiện}
+\begin{longtable}{p{4.4cm}p{2.8cm}p{5.6cm}}
+\toprule
+\textbf{Nhược điểm} & \textbf{Mức độ} & \textbf{Hướng cải thiện} \\
+\midrule
+Chưa có JWT thực sự & Cao & Bổ sung token access/refresh và middleware ở gateway. \\
+Chưa có Nginx riêng & Trung bình & Đặt Nginx làm reverse proxy đúng như mô hình tham khảo. \\
+Chưa có message queue & Cao & Thêm RabbitMQ hoặc Redis cho event bất đồng bộ. \\
+Chưa có distributed tracing & Trung bình & Tích hợp Jaeger/OpenTelemetry để debug xuyên service. \\
+Chưa có monitoring đầy đủ & Trung bình & Thêm Prometheus + Grafana cho metrics production. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Checklist đánh giá Chương 4}
+\begin{longtable}{p{8.4cm}p{5.2cm}}
+\toprule
+\textbf{Hạng mục} & \textbf{Trạng thái trong repo hiện tại} \\
+\midrule
+Sơ đồ kiến trúc tổng thể & Đạt, có đủ client, gateway, service nghiệp vụ, PostgreSQL và Neo4j. \\
+API Gateway config & Đạt ở mức Next.js proxy + Django gateway, chưa có Nginx riêng. \\
+JWT Authentication & Chưa hoàn chỉnh, mới có demo login theo email. \\
+Service communication & Đạt ở mức sync call nội bộ và helper xử lý lỗi. \\
+Flowchart mua hàng & Đạt, có luồng order/payment đầy đủ; Shipping gộp vào order. \\
+Order Service code & Đạt. \\
+Payment Service code & Đạt, payment được tạo từ order hiện có. \\
+Shipping Service code & Mô hình logic / hướng mở rộng. \\
+Dockerfile & Đạt, mỗi service có build riêng và entrypoint. \\
+docker-compose & Đạt, dựng được toàn bộ stack local. \\
+Demo curl & Đạt, có healthcheck, summary và AI chat. \\
+Logging & Đạt ở mức container logs. \\
+Đánh giá hệ thống & Đạt, có nhận xét ưu/nhược điểm và hướng mở rộng. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Kết luận Chương 4 \& Toàn bộ tiểu luận}
+Chương 4 hoàn thiện vòng tròn kỹ thuật từ kiến trúc đến vận hành thực tế. Dù repository hiện tại chưa có Nginx riêng, JWT đầy đủ hay monitoring production hoàn chỉnh, hệ thống vẫn chứng minh được tính khả thi của kiến trúc Microservices nhờ gateway rõ ràng, giao tiếp liên service có kiểm soát, Docker Compose orchestration và AI service tách biệt. Nhìn toàn bộ tiểu luận, Chương 1 đặt nền tảng, Chương 2 dựng khung thiết kế, Chương 3 đem lại lớp trí tuệ, còn Chương 4 biến tất cả thành một bản demo vận hành được, gần với tinh thần của tài liệu tham khảo nhưng trung thực với code hiện tại của bạn.
+
+\section*{Tài liệu tham khảo}
+\begin{itemize}
+  \item Martin Fowler, James Lewis, \textit{Microservices: a definition of this new architectural term}.
+  \item Eric Evans, \textit{Domain-Driven Design: Tackling Complexity in the Heart of Software}.
+  \item Tài liệu chính thức của Django, FastAPI, Next.js, Docker, PostgreSQL và Neo4j.
+  \item Mã nguồn dự án \texttt{e-commerce-microservice} trong repository bài làm.
 \end{itemize}
-
-\section{Kết luận}
-\texttt{e-commerce-microservice} là một dự án minh họa tốt cho cách xây dựng nền tảng thương mại điện tử theo kiến trúc microservice với mức độ hoàn chỉnh tương đối cao cho mục đích học thuật và demo kỹ thuật. Dự án không chỉ giải quyết use-case quản lý người dùng, catalog, đơn hàng và thanh toán mà còn cho thấy cách phối hợp frontend, gateway, backend service và AI service trong cùng một hệ thống.
-
-Nếu tiếp tục phát triển, dự án có thể mở rộng theo các hướng như xác thực JWT tập trung, message broker cho event-driven workflow, observability đầy đủ, tách database riêng cho từng service và tăng độ sâu cho AI assistant.
 
 \end{document}
