@@ -1,0 +1,3676 @@
+CHƯƠNG 1: TỪ MONOLITHIC ĐẾN MICROSERVICES VÀ DDD .......................................... 3 
+
+1.1. Giới thiệu Monolithic Architecture ......................................................................... 3 
+
+1.2. Microservices Architecture ................................................................................... 4 
+
+1.3. Domain Driven Design (DDD) ................................................................................ 6 
+
+1.4. Case Study: Hệ thống Quản lý Bệnh viện (Healthcare) ............................................ 7 
+
+1.5. Kết luận Chương 1 ................................................................................................ 9 
+
+CHƯƠNG 2: PHÁT TRIỂN HỆ THỐNG E-COMMERCE MICROSERVICES ............................. 9 
+
+2.1. Xác định yêu cầu hệ thống .................................................................................... 9 
+
+2.2. Phân rã hệ thống theo DDD ................................................................................. 10 
+
+2.3. Thiết kế Product Service ..................................................................................... 11 
+
+2.4. Thiết kế User Service .......................................................................................... 13 
+
+2.5. Thiết kế Cart Service ........................................................................................... 15 
+
+2.6. Thiết kế Order Service ......................................................................................... 16 
+
+2.7. Thiết kế Payment Service & Shipping Service ....................................................... 16 
+
+2.8. Biểu đồ luồng xử lý — Use Case Mua hàng (End-to-End) ....................................... 17 
+
+2.9. Checklist đánh giá Chương 2 ............................................................................... 18 
+
+2.10. Kết luận Chương 2 ............................................................................................ 18 
+
+CHƯƠNG 3: AI SERVICE CHO TƯ VẤN SẢN PHẨM ......................................................... 19 
+
+3.1. Mục tiêu và Bối cảnh ........................................................................................... 19 
+
+3.2. Kiến trúc tổng thể AI Service ................................................................................ 20 
+
+3.3. Dữ liệu đầu vào .................................................................................................. 21 
+
+3.4. Thành phần 1 — Mô hình Deep Learning (TensorFlow/Keras) ................................. 22 
+
+3.5. Thành phần 2 — Knowledge Graph với Neo4j ....................................................... 26 
+
+3.6. Thành phần 3 — RAG (Retrieval-Augmented Generation) ...................................... 28 
+
+3.7. Kết hợp Hybrid — Tích hợp ba thành phần ........................................................... 32 
+
+3.8. Triển khai AI Service vào hệ thống Microservices .................................................. 33 
+
+3.9. Checklist đánh giá Chương 3 ............................................................................... 35 
+
+3.10. Kết luận Chương 3 ............................................................................................ 35 
+
+CHƯƠNG 4: XÂY DỰNG HỆ THỐNG HOÀN CHỈNH ........................................................ 36 
+
+4.1. Kiến trúc tổng thể hệ thống ................................................................................. 36 
+
+4.2. API Gateway — Nginx .......................................................................................... 38 
+
+4.3. Authentication — JWT ......................................................................................... 40 
+
+4.4. Giao tiếp giữa các Service ................................................................................... 43 
+
+4.5. Luồng mua hàng End-to-End — Code hoàn chỉnh ................................................ 45 
+
+4.6. Docker hoá toàn bộ hệ thống .............................................................................. 51 
+
+4.7. Demo kết quả — Minh hoạ API calls .................................................................... 56 
+
+4.8. Logging và Monitoring ......................................................................................... 59 
+
+4.9. Đánh giá hệ thống ............................................................................................... 61 
+
+4.10. Checklist đánh giá Chương 4 ............................................................................. 62 
+
+4.11. Kết luận Chương 4 & Toàn bộ tiểu luận ............................................................... 63 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+CHƯƠNG 1: TỪ MONOLITHIC ĐẾN MICROSERVICES VÀ 
+DDD 
+
+1.1. Giới thiệu Monolithic Architecture 
+
+1.1.1. Khái niệm 
+
+Monolithic Architecture là mô hình kiến trúc phần mềm trong đó toàn bộ các thành phần của hệ 
+thống — bao gồm giao diện người dùng (Presentation Layer), logic nghiệp vụ (Business Logic 
+Layer) và tầng truy xuất dữ liệu (Data Access Layer) — được tích hợp, xây dựng và triển khai 
+như một khối thống nhất duy nhất. Đây là mô hình truyền thống, phổ biến trong giai đoạn đầu 
+của kỹ nghệ phần mềm. 
+
+1.1.2. Cấu trúc điển hình 
+
+Một hệ thống Monolithic điển hình bao gồm ba tầng chính được đóng gói trong cùng một đơn vị 
+triển khai: 
+
+•  Presentation Layer: Xử lý giao tiếp với người dùng cuối thông qua giao diện web hoặc 
+
+ứng dụng di động. 
+
+•  Business Logic Layer: Chứa toàn bộ quy tắc nghiệp vụ, luồng xử lý và điều phối dữ 
+
+liệu. 
+
+•  Data Access Layer: Đảm nhiệm việc truy vấn, lưu trữ và quản lý dữ liệu từ cơ sở dữ liệu 
+
+trung tâm. 
+
+1.1.3. Ví dụ thực tế 
+
+Một hệ thống e-commerce xây dựng theo kiến trúc Monolithic sẽ tích hợp toàn bộ các chức năng 
+— quản lý sản phẩm, giỏ hàng, thanh toán, quản lý người dùng và giao hàng — trong cùng một 
+codebase duy nhất. Khi hệ thống cần cập nhật module thanh toán, toàn bộ ứng dụng phải được 
+build lại và triển khai lại, kể cả những module không có thay đổi. 
+
+1.1.4. Nhược điểm chi tiết 
+
+•  Khó mở rộng (Poor Scalability): Khi một module chịu tải cao (ví dụ: module tìm kiếm 
+sản phẩm), hệ thống buộc phải nhân bản (scale) toàn bộ ứng dụng thay vì chỉ scale 
+module đó, gây lãng phí tài nguyên. 
+
+•  Coupling cao (Tight Coupling): Các module phụ thuộc chặt chẽ lẫn nhau. Một thay đổi 
+nhỏ trong logic nghiệp vụ có thể gây ra hiệu ứng dây chuyền, ảnh hưởng đến toàn bộ hệ 
+thống. 
+
+•  Rủi ro khi triển khai (Deployment Risk): Mỗi lần phát hành phiên bản mới đều yêu 
+cầu dừng và khởi động lại toàn hệ thống. Một lỗi nhỏ trong một module có thể làm sập 
+toàn bộ dịch vụ. 
+
+•  Khó phát triển nhóm (Team Scalability): Khi nhiều nhóm phát triển cùng làm việc trên 
+một codebase, xung đột mã nguồn (merge conflict) xảy ra thường xuyên, làm chậm tiến 
+độ. 
+
+•  Hạn chế công nghệ (Technology Lock-in): Toàn bộ hệ thống bị ràng buộc với một ngôn 
+
+ngữ lập trình và framework duy nhất. 
+
+1.1.5. Khi nào nên dùng Monolithic 
+
+Mặc dù có nhiều hạn chế, Monolithic vẫn phù hợp trong các tình huống: 
+
+•  Hệ thống nhỏ, đơn giản với yêu cầu ít thay đổi. 
+•  Giai đoạn MVP (Minimum Viable Product) cần ra mắt nhanh. 
+•  Team phát triển ít thành viên, chưa có kinh nghiệm quản lý hệ thống phân tán. 
+
+1.2. Microservices Architecture 
+
+1.2.1. Khái niệm 
+
+Microservices Architecture là mô hình kiến trúc phần mềm trong đó hệ thống được phân rã thành 
+tập hợp các dịch vụ nhỏ (services), mỗi dịch vụ thực hiện một chức năng nghiệp vụ riêng biệt, 
+được triển khai độc lập và giao tiếp với nhau thông qua các giao thức chuẩn như REST API hoặc 
+Message Queue. 
+
+1.2.2. Đặc điểm cốt lõi 
+
+•  Mỗi service sở hữu cơ sở dữ liệu riêng biệt (Database-per-Service pattern). 
+•  Giao tiếp giữa các service thông qua API (REST/gRPC) hoặc hệ thống hàng đợi thông 
+
+điệp (Message Broker). 
+
+•  Mỗi service có thể được triển khai, nâng cấp và mở rộng độc lập mà không ảnh hưởng 
+
+đến các service khác. 
+
+1.2.3. So sánh Monolithic và Microservices 
+
+Tiêu chí 
+
+Đơn vị triển khai 
+Mở rộng (Scale) 
+Mức độ phụ thuộc 
+Công nghệ 
+Độ phức tạp vận hành Thấp 
+Phù hợp với 
+
+Microservices 
+Từng service độc lập 
+Scale từng service riêng lẻ 
+Loose Coupling 
+
+Monolithic 
+Toàn bộ ứng dụng 
+Scale toàn hệ thống 
+Coupling cao 
+Một ngôn ngữ/framework Đa ngôn ngữ, đa framework 
+Cao 
+Hệ thống lớn, nhiều team 
+
+Hệ thống nhỏ, MVP 
+
+1.2.4. Ưu điểm của Microservices 
+
+•  Mở rộng độc lập: Chỉ cần tăng tài nguyên cho service đang chịu tải, không cần scale 
+
+toàn hệ thống. 
+
+•  Độ tin cậy cao: Lỗi trong một service được cô lập, không lan sang các service khác 
+
+(Fault Isolation). 
+
+•  Tăng tốc phát triển: Các nhóm phát triển khác nhau có thể làm việc song song trên từng 
+
+service mà không xung đột. 
+
+•  Linh hoạt công nghệ: Mỗi service có thể chọn ngôn ngữ, framework và cơ sở dữ liệu 
+
+phù hợp nhất với yêu cầu nghiệp vụ của nó. 
+
+ 
+1.2.5. Nhược điểm của Microservices 
+
+•  Phức tạp hệ thống: Đòi hỏi cơ sở hạ tầng phức tạp hơn (container orchestration, service 
+
+discovery, load balancing). 
+
+•  Khó debug: Việc truy vết lỗi qua nhiều service đòi hỏi hệ thống logging và tracing tập 
+
+trung. 
+
+•  Overhead giao tiếp: Mỗi lời gọi API giữa các service đều có độ trễ mạng, cần xử lý các 
+
+tình huống timeout và retry. 
+
+1.2.6. Nguyên tắc thiết kế 
+
+•  Single Responsibility: Mỗi service chỉ đảm nhiệm một chức năng nghiệp vụ duy nhất. 
+•  Loose Coupling: Các service tương tác với nhau chỉ thông qua interface (API), không 
+
+truy cập trực tiếp vào nội bộ hoặc cơ sở dữ liệu của service khác. 
+
+•  High Cohesion: Tất cả logic liên quan đến một nghiệp vụ được gom về cùng một 
+
+service. 
+
+1.3. Domain Driven Design (DDD) 
+
+1.3.1. Mục tiêu 
+
+Domain Driven Design (DDD) là phương pháp luận thiết kế phần mềm tập trung vào việc mô 
+hình hóa hệ thống dựa trên nghiệp vụ thực tế (business domain), đảm bảo sự đồng nhất giữa 
+ngôn ngữ của chuyên gia nghiệp vụ và mã nguồn của lập trình viên (Ubiquitous Language). 
+DDD không phụ thuộc vào công nghệ cụ thể và đặc biệt hiệu quả khi áp dụng để xác định ranh 
+giới phân rã trong kiến trúc Microservices. 
+
+1.3.2. Các khái niệm cốt lõi 
+
+Entity: Đối tượng có định danh (ID) duy nhất và vòng đời riêng biệt. Hai entity khác nhau dù có 
+cùng thuộc tính vẫn là hai đối tượng khác nhau nếu ID khác nhau. Ví dụ: User (user_id), Product 
+(product_id), Order (order_id). 
+
+Value Object: Đối tượng không có định danh riêng, được nhận dạng hoàn toàn bằng giá trị của 
+các thuộc tính. Ví dụ: Address (street, city, country), Money (amount, currency). 
+
+Aggregate: Một nhóm các Entity và Value Object có liên quan chặt chẽ, được xử lý như một 
+đơn vị nhất quán. Mỗi Aggregate có một Aggregate Root là điểm truy cập duy nhất từ bên ngoài. 
+Ví dụ: Order Aggregate gồm Order (root) + danh sách OrderItem. 
+
+Bounded Context: Ranh giới ngữ nghĩa rõ ràng trong đó một mô hình domain cụ thể có giá trị 
+và nhất quán. Cùng một khái niệm (ví dụ: "Product") có thể có ý nghĩa khác nhau trong các 
+Bounded Context khác nhau. Ví dụ: "Product" trong Product Context chứa thông tin chi tiết kỹ 
+thuật, trong Order Context chỉ cần product_id và giá. 
+
+1.3.3. Context Map 
+
+Context Map là sơ đồ thể hiện mối quan hệ giữa các Bounded Context trong hệ thống. Hai mẫu 
+quan hệ phổ biến: 
+
+•  Shared Kernel: Hai context chia sẻ một tập con mô hình domain chung, được thống nhất 
+
+và duy trì bởi cả hai team. 
+
+•  Customer-Supplier: Một context (Supplier) cung cấp dữ liệu/dịch vụ cho context khác 
+(Customer). Ví dụ: Order Context phụ thuộc vào Product Context để lấy thông tin sản 
+phẩm. 
+
+1.3.4. DDD trong Microservices 
+
+Nguyên tắc cốt lõi: Một Bounded Context tương ứng với một Microservice. Cách ánh xạ này 
+đảm bảo rằng mỗi service được phân rã dựa trên ranh giới nghiệp vụ tự nhiên, thay vì dựa trên 
+tầng kỹ thuật (technical layer), tránh tạo ra các service quá nhỏ hoặc phụ thuộc chéo phức tạp. 
+
+1.4. Case Study: Hệ thống Quản lý Bệnh viện (Healthcare) 
+
+1.4.1. Mô tả bài toán 
+
+Một hệ thống quản lý bệnh viện cần đáp ứng các nhu cầu nghiệp vụ sau: quản lý thông tin bệnh 
+nhân, quản lý thông tin bác sĩ và điều dưỡng, và điều phối lịch khám bệnh giữa bệnh nhân và bác 
+sĩ. Yêu cầu hệ thống phải có khả năng mở rộng theo từng module khi số lượng bệnh nhân tăng 
+đột biến. 
+
+1.4.2. Quy trình phân rã theo DDD 
+
+Bước 1 — Xác định Domain chính: 
+
+Phân tích nghiệp vụ xác định ba domain cốt lõi: 
+
+•  Patient Management Domain: Quản lý toàn bộ thông tin và hồ sơ y tế của bệnh nhân. 
+•  Doctor Management Domain: Quản lý thông tin chuyên môn, lịch làm việc và chuyên 
+
+khoa của bác sĩ. 
+
+•  Appointment Scheduling Domain: Điều phối, đặt lịch và quản lý trạng thái các ca 
+
+khám. 
+
+Bước 2 — Xác định Bounded Context: 
+
+Mỗi domain được đặt trong một Bounded Context riêng biệt với ngôn ngữ nghiệp vụ nhất quán 
+nội bộ: 
+
+•  Patient Context: Khái niệm "bệnh nhân" bao gồm ID, hồ sơ sức khỏe, lịch sử điều trị. 
+
+•  Doctor Context: Khái niệm "bác sĩ" bao gồm ID, chuyên khoa, lịch trực. 
+•  Appointment Context: Khái niệm "lịch hẹn" liên kết patient_id và doctor_id, không sở 
+
+hữu trực tiếp thông tin chi tiết của hai bên. 
+
+Bước 3 — Phân rã thành Microservices: 
+
+Bounded Context 
+
+Microservice 
+
+Patient Context 
+Doctor Context 
+Appointment Context appointment-service Đặt lịch, xác nhận, hủy, tra cứu lịch hẹn 
+
+patient-service 
+doctor-service 
+
+Trách nhiệm 
+CRUD thông tin bệnh nhân, hồ sơ y tế 
+CRUD thông tin bác sĩ, lịch làm việc 
+
+Bước 4 — Xác định quan hệ giữa các service: 
+
+Appointment Service đóng vai trò Customer, phụ thuộc vào Patient Service và Doctor Service 
+(cả hai đóng vai trò Supplier). Giao tiếp được thực hiện qua REST API, không truy cập trực tiếp 
+vào cơ sở dữ liệu của nhau. 
+
+1.4.3. Ví dụ API 
+
+# Patient Service 
+GET  /patients/{id}       → Lấy thông tin bệnh nhân 
+POST /patients            → Đăng ký bệnh nhân mới 
+
+# Doctor Service 
+GET  /doctors/{id}        → Lấy thông tin bác sĩ 
+GET  /doctors/{id}/schedule → Xem lịch làm việc 
+
+# Appointment Service 
+
+ 
+ 
+ 
+POST /appointments        → Đặt lịch khám mới 
+GET  /appointments/{id}   → Tra cứu lịch hẹn 
+PUT  /appointments/{id}/cancel → Hủy lịch hẹn 
+
+1.5. Kết luận Chương 1 
+
+Monolithic Architecture phù hợp với các hệ thống nhỏ, đội phát triển ít thành viên và giai đoạn 
+MVP cần ra mắt nhanh. Khi hệ thống tăng trưởng về quy mô và độ phức tạp, Microservices 
+Architecture trở thành lựa chọn tất yếu nhờ khả năng mở rộng độc lập và tính linh hoạt cao. 
+Domain Driven Design cung cấp phương pháp luận khoa học để xác định đúng ranh giới phân rã, 
+đảm bảo mỗi Microservice phản ánh chính xác một miền nghiệp vụ thực tế — đây là nền tảng 
+thiết kế không thể thiếu trong các hệ thống phần mềm quy mô lớn hiện đại. 
+
+CHƯƠNG 2: PHÁT TRIỂN HỆ THỐNG E-COMMERCE 
+MICROSERVICES 
+
+2.1. Xác định yêu cầu hệ thống 
+
+2.1.1. Yêu cầu chức năng (Functional Requirements) 
+
+Hệ thống e-commerce cần đáp ứng các nhóm chức năng cốt lõi sau: 
+
+Mô tả 
+
+Nhóm chức 
+năng 
+Hỗ trợ đa danh mục: sách, điện tử, thời trang; CRUD sản phẩm theo từng 
+Quản lý sản 
+domain 
+phẩm 
+Ba vai trò: Admin (toàn quyền), Staff (vận hành), Customer (mua hàng); xác 
+Quản lý người 
+thực JWT 
+dùng 
+Thêm, cập nhật số lượng, xóa sản phẩm; lưu trạng thái theo phiên người dùng 
+Giỏ hàng 
+Tạo đơn từ giỏ hàng, theo dõi trạng thái đơn hàng 
+Đặt hàng 
+Xử lý giao dịch, quản lý trạng thái thanh toán (Pending/Success/Failed) 
+Thanh toán 
+Giao hàng 
+Tạo và theo dõi lộ trình vận chuyển (Processing/Shipping/Delivered) 
+Gợi ý sản phẩm  Tích hợp AI Service phân tích hành vi và đề xuất sản phẩm phù hợp 
+
+2.1.2. Yêu cầu phi chức năng (Non-functional Requirements) 
+
+•  Scalability: Mỗi service có thể được mở rộng tài nguyên độc lập tùy theo tải thực tế. 
+
+ 
+ 
+ 
+•  High Availability: Hệ thống đảm bảo uptime cao; lỗi tại một service không làm gián 
+
+đoạn toàn bộ luồng nghiệp vụ. 
+
+•  Security: Xác thực người dùng bằng JWT; phân quyền theo mô hình RBAC (Role-Based 
+
+Access Control). 
+
+•  Maintainability: Codebase tách biệt theo service, dễ bảo trì và nâng cấp độc lập. 
+•  Observability: Hệ thống logging tập trung và monitoring theo thời gian thực. 
+
+2.2. Phân rã hệ thống theo DDD 
+
+[HÌNH 2.1 — Bắt buộc phải có] 
+
+Mô tả hình cần vẽ: Sơ đồ phân rã hệ thống E-Commerce thành các Microservice. 
+
+Bố cục gợi ý (2 hàng): 
+
+•  Hàng trên (Client tier): Hình chữ nhật "Web Browser / Mobile App" → Mũi tên → 
+
+"API Gateway (Nginx :80)" 
+
+•  Hàng giữa (Service tier): Từ API Gateway kẻ 7 mũi tên xuống 7 service:  
+
+o  user-service (:8000) → user_db (MySQL) 
+o  product-service (:8001) → product_db (PostgreSQL) 
+o  cart-service (:8002) → cart_db 
+o  order-service (:8003) → order_db 
+o  payment-service (:8004) → payment_db 
+o  shipping-service (:8005) → shipping_db 
+o  ai-service (:8006) → (Neo4j + FAISS) 
+
+•  Mũi tên giao tiếp ngang giữa order↔payment và payment↔shipping (đứt nét, màu 
+
+cam) ghi "REST API" 
+
+•  Mỗi service dùng một màu riêng để phân biệt. 
+
+2.2.1. Bounded Context và ánh xạ Service 
+
+user-service 
+
+8000 MySQL 
+
+Bounded Context  Microservice  Port  Database 
+User Context 
+Product Context  product-service  8001 PostgreSQL 
+Cart Context 
+8002 PostgreSQL 
+cart-service 
+8003 PostgreSQL 
+order-service 
+Order Context 
+Payment Context  payment-service 8004 PostgreSQL 
+Shipping Context  shipping-service 8005 PostgreSQL 
+AI Context 
+
+ai-service 
+
+8006 Neo4j + FAISS 
+
+2.2.2. Nguyên tắc thiết kế 
+
+•  Mỗi Bounded Context sở hữu một cơ sở dữ liệu riêng biệt; nghiêm cấm truy cập chéo 
+
+database giữa các service. 
+
+•  Giao tiếp giữa các service chỉ thông qua REST API đã được định nghĩa rõ ràng. 
+•  API Gateway là điểm vào duy nhất cho mọi yêu cầu từ client, đảm nhiệm routing, 
+
+authentication và rate limiting. 
+
+2.3. Thiết kế Product Service 
+
+2.3.1. Biểu đồ lớp (Class Diagram) 
+
+Các lớp và quan hệ: 
+
+┌─────────────────┐ 
+│    Category     │ 
+├─────────────────┤ 
+│ - id: int       │ 
+│ - name: str     │ 
+└────────┬────────┘ 
+         │ 1 
+         │ (Association) 
+         │ * 
+┌────────┴────────┐ 
+│    Product      │ 
+├─────────────────┤ 
+│ - id: int       │ 
+│ - name: str     │ 
+│ - price: float  │ 
+
+ 
+ 
+ 
+│ - stock: int    │ 
+│ - category_id   │ 
+└────────┬────────┘ 
+         │ (Inheritance / OneToOne) 
+    ┌────┴──────────┐ 
+    │               │               │ 
+┌───┴───┐    ┌──────┴──┐    ┌──────┴──┐ 
+│  Book  │    │Electronics│   │ Fashion │ 
+├───────┤    ├─────────┤    ├────────┤ 
+│-author│    │-brand   │    │-size   │ 
+│-isbn  │    │-warranty│    │-color  │ 
+└───────┘    └─────────┘    └────────┘ 
+
+Ký hiệu UML cần thể hiện: 
+
+•  Mũi tên tam giác rỗng (Inheritance) từ Book/Electronics/Fashion lên Product 
+•  Số quan hệ: Category (1) — (*) Product 
+
+2.3.2. Data Model (sinh từ Class Diagram) 
+
+-- Product Service Database (PostgreSQL) 
+CREATE TABLE category ( 
+    id   SERIAL PRIMARY KEY, 
+    name VARCHAR(100) NOT NULL 
+); 
+
+CREATE TABLE product ( 
+    id          SERIAL PRIMARY KEY, 
+    name        VARCHAR(255) NOT NULL, 
+    price       DECIMAL(12, 2) NOT NULL, 
+    stock       INTEGER NOT NULL DEFAULT 0, 
+    category_id INTEGER REFERENCES category(id) ON DELETE SET NULL 
+); 
+
+-- Bảng mở rộng theo từng domain (OneToOne với product) 
+CREATE TABLE book ( 
+    product_id  INTEGER PRIMARY KEY REFERENCES product(id) ON DELETE CASCADE, 
+    author      VARCHAR(255), 
+    publisher   VARCHAR(255), 
+    isbn        VARCHAR(20) UNIQUE 
+); 
+
+CREATE TABLE electronics ( 
+    product_id  INTEGER PRIMARY KEY REFERENCES product(id) ON DELETE CASCADE, 
+    brand       VARCHAR(100), 
+    warranty    INTEGER  -- Đơn vị: tháng 
+); 
+
+CREATE TABLE fashion ( 
+    product_id  INTEGER PRIMARY KEY REFERENCES product(id) ON DELETE CASCADE, 
+    size        VARCHAR(10), 
+    color       VARCHAR(50) 
+); 
+
+ 
+ 
+ 
+ 
+2.3.3. API 
+
+Mô tả 
+Lấy danh sách sản phẩm (có filter, pagination) 
+Tạo sản phẩm mới 
+
+/products/ 
+/products/ 
+/products/{id}/ Lấy chi tiết một sản phẩm 
+/products/{id}/ Cập nhật sản phẩm 
+
+Method  Endpoint 
+GET 
+POST 
+GET 
+PUT 
+DELETE /products/{id}/ Xóa sản phẩm 
+GET 
+
+Lấy danh sách danh mục 
+
+/categories/ 
+
+2.4. Thiết kế User Service 
+
+2.4.1. Biểu đồ lớp (Class Diagram) 
+
+┌──────────────────────┐ 
+│     AbstractUser     │  (Django built-in) 
+└──────────┬───────────┘ 
+           │ (Inheritance) 
+┌──────────┴───────────┐ 
+│        User          │ 
+├──────────────────────┤ 
+│ - id: int            │ 
+│ - username: str      │ 
+│ - email: str         │ 
+│ - password: str      │ 
+│ - role: RoleEnum     │ 
+│ - created_at: datetime│ 
+
+ 
+ 
+├──────────────────────┤ 
+│ + register()         │ 
+│ + login()            │ 
+│ + get_profile()      │ 
+└──────────────────────┘ 
+
+<<Enumeration>> 
+RoleEnum 
+───────── 
+ADMIN 
+STAFF 
+CUSTOMER 
+
+2.4.2. Data Model 
+
+-- User Service Database (MySQL) 
+CREATE TABLE user ( 
+    id         INT AUTO_INCREMENT PRIMARY KEY, 
+    username   VARCHAR(100) NOT NULL UNIQUE, 
+    email      VARCHAR(255) NOT NULL UNIQUE, 
+    password   VARCHAR(255) NOT NULL,  -- Lưu dạng hash (bcrypt) 
+    role       ENUM('admin', 'staff', 'customer') NOT NULL DEFAULT 
+'customer', 
+    is_active  BOOLEAN DEFAULT TRUE, 
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP 
+); 
+
+2.4.3. Phân quyền RBAC 
+
+Vai trò 
+Admin  CRUD toàn bộ tài nguyên hệ thống, quản lý người dùng 
+Staff 
+Customer Xem sản phẩm, quản lý giỏ hàng, đặt hàng và thanh toán 
+
+Xem và xử lý đơn hàng, cập nhật trạng thái giao hàng 
+
+Quyền hạn 
+
+2.4.4. API 
+
+Mô tả 
+
+Method  Endpoint 
+POST 
+POST 
+POST 
+GET 
+GET 
+
+Phân quyền 
+Public 
+/auth/register Đăng ký tài khoản mới 
+/auth/login  Đăng nhập, nhận JWT token Public 
+/auth/refresh  Làm mới access token 
+Danh sách người dùng 
+/users/ 
+/users/me/  Thông tin cá nhân 
+
+Authenticated 
+Admin only 
+Authenticated 
+
+ 
+ 
+2.5. Thiết kế Cart Service 
+
+2.5.1. Biểu đồ lớp 
+
+┌─────────────┐          ┌──────────────┐ 
+│    Cart     │  1    *  │   CartItem   │ 
+├─────────────┤──────────├──────────────┤ 
+│ - id: int   │          │ - id: int    │ 
+│ - user_id   │          │ - cart_id    │ 
+│ - created_at│          │ - product_id │ 
+└─────────────┘          │ - quantity   │ 
+                         │ - unit_price │ 
+                         └──────────────┘ 
+
+Ký hiệu: Composition (hình thoi đặc) từ Cart sang CartItem (Cart sở hữu CartItem). 
+
+2.5.2. Data Model 
+
+CREATE TABLE cart ( 
+    id         SERIAL PRIMARY KEY, 
+    user_id    INTEGER NOT NULL UNIQUE,  -- Mỗi user có tối đa 1 cart active 
+    created_at TIMESTAMP DEFAULT NOW() 
+); 
+
+CREATE TABLE cart_item ( 
+    id         SERIAL PRIMARY KEY, 
+    cart_id    INTEGER REFERENCES cart(id) ON DELETE CASCADE, 
+    product_id INTEGER NOT NULL,  -- Tham chiếu logic đến product-service 
+    quantity   INTEGER NOT NULL CHECK (quantity > 0), 
+    unit_price DECIMAL(12, 2) NOT NULL  -- Lưu giá tại thời điểm thêm vào giỏ 
+
+ 
+ 
+); 
+
+2.6. Thiết kế Order Service 
+
+2.6.1. Biểu đồ lớp 
+
+[HÌNH 2.5 — Bắt buộc phải có] 
+
+Mô tả hình cần vẽ: Class Diagram Order Service. 
+
+┌──────────────────┐         ┌───────────────┐ 
+│      Order       │ 1     * │   OrderItem   │ 
+├──────────────────┤─────────├───────────────┤ 
+│ - id: int        │         │ - id: int     │ 
+│ - user_id: int   │         │ - order_id    │ 
+│ - total_price    │         │ - product_id  │ 
+│ - status: Enum   │         │ - quantity    │ 
+│ - created_at     │         │ - unit_price  │ 
+└──────────────────┘         └───────────────┘ 
+
+<<Enumeration>> 
+OrderStatus 
+─────────── 
+PENDING 
+CONFIRMED 
+PAID 
+CANCELLED 
+
+2.6.2. Data Model 
+
+CREATE TABLE orders ( 
+    id          SERIAL PRIMARY KEY, 
+    user_id     INTEGER NOT NULL, 
+    total_price DECIMAL(12, 2) NOT NULL, 
+    status      VARCHAR(20) NOT NULL DEFAULT 'PENDING', 
+    created_at  TIMESTAMP DEFAULT NOW() 
+); 
+
+CREATE TABLE order_item ( 
+    id         SERIAL PRIMARY KEY, 
+    order_id   INTEGER REFERENCES orders(id) ON DELETE CASCADE, 
+    product_id INTEGER NOT NULL, 
+    quantity   INTEGER NOT NULL, 
+    unit_price DECIMAL(12, 2) NOT NULL 
+); 
+
+2.7. Thiết kế Payment Service & Shipping Service 
+
+[HÌNH 2.6 — Bắt buộc phải có] 
+
+Mô tả hình cần vẽ: Class Diagram kết hợp Payment và Shipping Service (hai hình chữ nhật 
+riêng biệt, đặt cạnh nhau). 
+
+ 
+ 
+┌─────────────────┐        ┌──────────────────┐ 
+│    Payment      │        │    Shipment      │ 
+├─────────────────┤        ├──────────────────┤ 
+│ - id: int       │        │ - id: int        │ 
+│ - order_id: int │        │ - order_id: int  │ 
+│ - amount: float │        │ - address: text  │ 
+│ - status: Enum  │        │ - status: Enum   │ 
+│ - paid_at       │        │ - created_at     │ 
+└─────────────────┘        └──────────────────┘ 
+
+PaymentStatus:             ShipmentStatus: 
+PENDING                    PROCESSING 
+SUCCESS                    SHIPPING 
+FAILED                     DELIVERED 
+REFUNDED 
+
+Data Model — Payment Service: 
+
+CREATE TABLE payment ( 
+    id       SERIAL PRIMARY KEY, 
+    order_id INTEGER NOT NULL UNIQUE, 
+    amount   DECIMAL(12, 2) NOT NULL, 
+    status   VARCHAR(20) NOT NULL DEFAULT 'PENDING', 
+    paid_at  TIMESTAMP 
+); 
+
+Data Model — Shipping Service: 
+
+CREATE TABLE shipment ( 
+    id         SERIAL PRIMARY KEY, 
+    order_id   INTEGER NOT NULL UNIQUE, 
+    address    TEXT NOT NULL, 
+    status     VARCHAR(20) NOT NULL DEFAULT 'PROCESSING', 
+    created_at TIMESTAMP DEFAULT NOW(), 
+    updated_at TIMESTAMP DEFAULT NOW() 
+); 
+
+2.8. Biểu đồ luồng xử lý — Use Case Mua hàng (End-to-End) 
+
+[HÌNH 2.7 — Bắt buộc phải có — Quan trọng nhất Chương 2] 
+
+Mô tả hình cần vẽ: Sequence Diagram (biểu đồ tuần tự) cho luồng mua hàng hoàn chỉnh. 
+
+Các đối tượng tham gia (lifelines, cột dọc từ trái sang phải): Client | API Gateway | user-
+service | product-service | cart-service | order-service | payment-service | 
+shipping-service 
+
+Các bước theo thứ tự (mũi tên ngang có số thứ tự): 
+
+1.  Client          → API Gateway      : POST /auth/login 
+2.  API Gateway     → user-service     : Xác thực thông tin 
+3.  user-service    → API Gateway      : Trả về JWT Token 
+
+ 
+4.  API Gateway     → Client           : JWT Token 
+
+5.  Client          → API Gateway      : GET /products/ (kèm JWT) 
+6.  API Gateway     → product-service  : Forward request (sau khi verify JWT) 
+7.  product-service → API Gateway      : Danh sách sản phẩm 
+8.  API Gateway     → Client           : Danh sách sản phẩm 
+
+9.  Client          → API Gateway      : POST /cart/add {product_id, qty} 
+10. API Gateway     → cart-service     : Thêm sản phẩm vào giỏ 
+11. cart-service    → API Gateway      : Giỏ hàng đã cập nhật 
+12. API Gateway     → Client           : OK 
+
+13. Client          → API Gateway      : POST /orders/ (Tạo đơn hàng) 
+14. API Gateway     → order-service    : Tạo Order từ Cart 
+15. order-service   → cart-service     : GET /cart/{user_id} (lấy chi tiết 
+giỏ) 
+16. cart-service    → order-service    : Dữ liệu giỏ hàng 
+17. order-service   → API Gateway      : Order đã tạo (status: PENDING) 
+
+18. Client          → API Gateway      : POST /payment/pay {order_id} 
+19. API Gateway     → payment-service  : Xử lý thanh toán 
+20. payment-service → order-service    : Cập nhật status = PAID 
+21. payment-service → shipping-service : POST /shipping/create {order_id, 
+address} 
+22. shipping-service → payment-service : Shipment đã tạo (status: PROCESSING) 
+23. payment-service → API Gateway      : Thanh toán thành công 
+24. API Gateway     → Client           : OK — Đơn hàng đang được xử lý giao 
+hàng 
+
+2.9. Checklist đánh giá Chương 2 
+
+Hạng mục 
+
+Yêu cầu 
+
+Trạng thái 
+
+Hình phân rã service 
+Class Diagram Product 
+Class Diagram User 
+Class Diagram Cart 
+Class Diagram Order 
+Class Diagram Payment & Shipping Có đầy đủ 
+Sequence Diagram mua hàng 
+Data Model từng service 
+So sánh MySQL vs PostgreSQL 
+
+Có sơ đồ đầy đủ 7 service + Gateway Hình 2.1 
+Hình 2.2 
+Có đầy đủ lớp + quan hệ UML 
+Hình 2.3 
+Có kèm Enumeration 
+Hình 2.4 
+Có Composition rõ ràng 
+Hình 2.5 
+Có Enumeration trạng thái 
+Hình 2.6 
+Hình 2.7 
+Mục 2.3–2.7 
+Mục 2.3, 2.4 
+
+Có 24 bước đầy đủ 
+Sinh từ Class Diagram, có FK 
+Có lý do chọn cho từng service 
+
+2.10. Kết luận Chương 2 
+
+Hệ thống e-commerce được thiết kế theo kiến trúc Microservices với 7 service độc lập, mỗi 
+service đảm nhiệm một Bounded Context nghiệp vụ riêng biệt. Việc áp dụng DDD trong giai 
+đoạn phân tích đảm bảo ranh giới giữa các service được xác định dựa trên logic nghiệp vụ thực 
+
+ 
+ 
+ 
+ 
+ 
+ 
+tế, không phải theo tầng kỹ thuật. Mỗi service sở hữu Data Model độc lập được sinh ra từ Class 
+Diagram tương ứng, đảm bảo tính nhất quán từ thiết kế đến triển khai. Biểu đồ luồng xử lý mua 
+hàng (Hình 2.7) minh họa cách các service phối hợp theo chuỗi để hoàn thành một giao dịch end-
+to-end hoàn chỉnh. 
+
+CHƯƠNG 3: AI SERVICE CHO TƯ VẤN SẢN PHẨM 
+
+3.1. Mục tiêu và Bối cảnh 
+
+Trong hệ thống HealthCare AI Pharmacy — một nền tảng bán lẻ thiết bị và dược phẩm y tế trực 
+tuyến — AI Service được xây dựng nhằm giải quyết đồng thời hai bài toán nghiệp vụ cốt lõi: 
+
+Bài toán 1 — Dự đoán hành vi (Intent Prediction): Phân tích chuỗi hành vi của khách hàng 
+(view, click, add_to_cart, ...) theo thời gian để dự đoán hành động tiếp theo, từ đó hệ thống có 
+thể chủ động gợi ý sản phẩm phù hợp trước khi người dùng tìm kiếm. 
+
+Bài toán 2 — Trợ lý tư vấn y khoa (Medical AI Consultant): Tiếp nhận câu hỏi ngôn ngữ tự 
+nhiên từ bệnh nhân, tự động truy xuất thông tin từ kho tri thức y khoa và liên kết trực tiếp với mã 
+sản phẩm đang có trong hệ thống, tạo ra chu trình tư vấn — đề xuất — thanh toán liền mạch. 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+3.2. Kiến trúc tổng thể AI Service 
+
+AI Service được thiết kế là một Microservice độc lập (FastAPI, port :8006), tích hợp ba thành 
+phần AI cốt lõi theo mô hình Pipeline đa tầng: 
+
+[HÌNH 3.1 — Bắt buộc phải có] 
+
+Mô tả hình cần vẽ: Sơ đồ kiến trúc End-to-End AI Pipeline. 
+
+Bố cục từ trái sang phải theo 4 tầng: 
+
+┌──────────┐    ┌─────────────────────────────────────────┐    
+┌───────────────┐ 
+│  INPUT   │    │           AI SERVICE (Port :8006)        │    │    OUTPUT     
+│ 
+│          │    │                                          │    │               
+│ 
+│ user_id  │───>│  ┌──────────┐  ┌──────────┐  ┌───────┐ │───>│ Intent label  
+│ 
+│ query    │    │  │  LSTM    │  │  Neo4j   │  │ FAISS │ │    │ Product list  
+│ 
+│ behavior │    │  │  Model   │  │  Graph   │  │  RAG  │ │    │ Chat response 
+│ 
+│ history  │    │  └────┬─────┘  └────┬─────┘  └───┬───┘ │    │               
+│ 
+└──────────┘    │       └─────────────┴─────────────┘      │    
+└───────────────┘ 
+                │              LLM Router (Gemini)          │ 
+                │         GraphCypherQAChain / VectorRAG    │ 
+                └─────────────────────────────────────────┘ 
+
+Các mũi tên luồng dữ liệu: 
+
+•  data_user500.csv → Data Preprocessing → LSTM Training (o•line, trên Colab) 
+•  medical_kb.csv → Embedding → FAISS VectorDB 
+•  Cypher queries → Neo4j AuraDB (cloud) 
+•  API Gateway nhận request từ client → proxy sang AI Service 
+
+ 
+ 
+3.3. Dữ liệu đầu vào 
+
+3.3.1. Tập dữ liệu hành vi người dùng (data_user500.csv) 
+
+Tập dữ liệu được sinh tự động bằng Python, mô phỏng hành vi của 500 khách hàng tương tác 
+với 50 sản phẩm thuốc và thiết bị y tế. Tập dữ liệu bao gồm 8 loại hành vi đặc trưng, phản ánh 
+đầy đủ phễu mua hàng (purchase funnel): 
+
+Hành vi 
+
+Ý nghĩa nghiệp vụ 
+
+Vị trí trong funnel 
+
+view 
+
+click 
+
+Xem trang sản phẩm 
+
+Top of Funnel 
+
+Nhấp vào sản phẩm 
+
+Top of Funnel 
+
+search 
+
+Tìm kiếm chủ động 
+
+Top of Funnel 
+
+compare 
+
+So sánh sản phẩm 
+
+Mid Funnel 
+
+wishlist 
+
+Lưu vào danh sách yêu thích Mid Funnel 
+
+add_to_cart Thêm vào giỏ hàng 
+
+Bottom Funnel 
+
+checkout  Bắt đầu thanh toán 
+
+Bottom Funnel 
+
+purchase  Hoàn tất mua hàng 
+
+Conversion 
+
+Cấu trúc dữ liệu: 
+
+user_id, product_id, action, timestamp 
+U001, P012, view,         2026-04-16 00:00:00 
+U001, P012, click,        2026-04-16 00:01:11 
+U001, P012, wishlist,     2026-04-16 00:05:45 
+U001, P012, add_to_cart,  2026-04-16 00:08:29 
+U002, P028, add_to_cart,  2026-04-06 00:18:11 
+U002, P028, checkout,     2026-04-06 00:21:01 
+
+3.3.2. Kỹ thuật tạo cửa sổ trình tự (Sequence Windowing) 
+
+Để chuẩn bị dữ liệu cho mô hình học chuỗi, hệ thống áp dụng kỹ thuật sliding window với 
+SEQ_LENGTH = 4: 
+
+• 
+
+Input X: Chuỗi 4 hành vi liên tiếp của cùng một người dùng (đã mã hóa thành số 
+nguyên). 
+
+•  Label y: Hành vi thứ 5 — nhãn cần dự đoán. 
+
+# Ví dụ: Chuỗi hành vi của U001 với P012 
+
+# [view=0, click=1, wishlist=4, add_to_cart=5] → dự đoán [checkout=6] 
+
+ACTION_MAP = { 
+    'view': 0, 'click': 1, 'search': 2, 'compare': 3, 
+    'wishlist': 4, 'add_to_cart': 5, 'checkout': 6, 'purchase': 7 
+} 
+SEQ_LENGTH  = 4 
+NUM_CLASSES = 8 
+
+3.4. Thành phần 1 — Mô hình Deep Learning (TensorFlow/Keras) 
+
+Hạt nhân phân tích hành vi của hệ thống AI Service được xây dựng dựa trên kỹ thuật Học sâu 
+(Deep Learning). Trái với các phương pháp phân tích chỉ dựa trên một điểm chạm duy nhất, bài 
+toán dự đoán ý định mua hàng (Intention Prediction) trong E-commerce được định nghĩa chặt 
+chẽ là một bài toán Phân loại chuỗi (Sequence Classification). Dữ liệu đầu vào là chuỗi thời 
+gian (time-series) gồm $N$ thao tác trong quá khứ ($X = [a_1, a_2, ..., a_N]$) nhằm dự đoán 
+thao tác tương lai $y = a_{N+1}$ (ví dụ: purchase hoặc add_to_cart). 
+
+3.4.1. Lý do lựa chọn kiến trúc LSTM 
+
+Bài toán dự đoán hành vi người dùng thuộc nhóm Sequence Classification — dữ liệu đầu vào là 
+chuỗi sự kiện có thứ tự thời gian và phụ thuộc nhân quả (người dùng chỉ có thể checkout sau khi 
+đã add_to_cart). Ba kiến trúc mạng hồi quy được so sánh: 
+
+Kiến 
+trúc 
+
+Cơ chế 
+
+Điểm mạnh 
+
+Điểm yếu 
+
+RNN 
+
+Vòng lặp ẩn đơn giản 
+
+Nhanh, ít tham 
+số 
+
+Vanishing Gradient — quên 
+hành vi xa 
+
+LSTM 
+
+Memory Cell + 3 Gates 
+(Forget/Input/Output) 
+
+Ghi nhớ dài hạn, 
+ổn định 
+
+Chậm hơn RNN 
+
+BiLSTM  Đọc chuỗi cả hai chiều 
+
+Ngữ cảnh phong 
+phú hơn 
+
+Nguy cơ data leakage trong 
+chuỗi một chiều 
+
+Kết luận lựa chọn: LSTM được chọn làm mô hình tốt nhất dựa trên kết quả thực nghiệm, với 
+Val_Accuracy = 0.68866 — cao nhất trong ba kiến trúc và đường hội tụ ổn định, không có dấu 
+hiệu overfitting. 
+
+Để mô hình hóa tính tuần tự này, nhóm nghiên cứu bắt buộc phải sử dụng họ Mạng Nơ-ron Hồi 
+quy (Recurrent Neural Networks - RNN). Tuy nhiên, mạng RNN truyền thống thường gặp sự cố 
+triệt tiêu đạo hàm (Vanishing Gradient) khi xử lý chuỗi dài, khiến mô hình "quên" mất hành 
+động đầu tiên của khách hàng. 
+
+ 
+ 
+Kiến trúc LSTM (Long Short-Term Memory) được lựa chọn để giải quyết triệt để khuyết điểm 
+này. Nhờ cấu trúc "Cổng quên" (Forget Gates) và "Trạng thái tế bào" (Cell State), LSTM có khả 
+năng ghi nhớ những thao tác có tác động mạnh mẽ đến hành vi chốt đơn ở cuối phễu và chủ động 
+vứt bỏ các nhiễu loạn trong quá trình người dùng lướt web. 
+
+3.4.2. Kiến trúc mô hình chi tiết (TensorFlow/Keras) 
+
+Hệ thống sử dụng Keras API của TensorFlow để khởi tạo cấu trúc tuần tự (Sequential Model) với 
+các tầng (Layers) cốt lõi như sau: 
+
+1.  Embedding Layer: Đóng vai trò ánh xạ (mapping) các nhãn hành vi danh mục 
+
+(categorical labels từ 0-7) vào một không gian véc-tơ liên tục (Dense Vector) 16 chiều. 
+Việc nhúng này cho phép mô hình học được ngữ nghĩa không gian, ví dụ hành vi view sẽ 
+có khoảng cách rất gần với click. 
+
+2.  LSTM Layer: Tầng hạt nhân nhận đầu vào từ Embedding. Tầng này quét qua các khung 
+thời gian (time-steps) để trích xuất đặc trưng ẩn (hidden features) của chuỗi người dùng. 
+
+3.  Dense Layer (Output): Sử dụng hàm kích hoạt softmax để xuất ra phân phối xác suất 
+
+(Probability Distribution) trên 8 lớp hành vi mục tiêu. 
+
+import tensorflow as tf 
+from tensorflow.keras.models import Sequential 
+from tensorflow.keras.layers import Embedding, LSTM, Bidirectional, Dense, 
+Dropout 
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping 
+
+# ── Hằng số ────────────────────────────────────────── 
+SEQ_LENGTH  = 4    # Độ dài cửa sổ chuỗi đầu vào 
+NUM_CLASSES = 8    # Số loại hành vi 
+EMBED_DIM   = 16   # Chiều không gian embedding 
+HIDDEN_DIM  = 32   # Số đơn vị ẩn LSTM 
+
+def build_model(model_type: str = 'LSTM') -> tf.keras.Model: 
+    """ 
+    Xây dựng mô hình phân loại chuỗi hành vi. 
+
+    Kiến trúc: 
+        Embedding → [RNN | LSTM | BiLSTM] → Dropout → Dense(relu) → 
+Dense(softmax) 
+
+    Args: 
+        model_type: Loại mạng hồi quy ('RNN', 'LSTM', 'BiLSTM') 
+    Returns: 
+        Compiled Keras model 
+    """ 
+    model = Sequential(name=f"BehaviorClassifier_{model_type}") 
+
+    # Tầng 1: Embedding 
+    # Ánh xạ mỗi action_id (0–7) thành vector EMBED_DIM chiều. 
+    # input_dim = NUM_CLASSES vì action đã được mã hóa thành số nguyên 0..7 
+    model.add(Embedding( 
+        input_dim    = NUM_CLASSES, 
+
+ 
+ 
+     
+     
+ 
+        output_dim   = EMBED_DIM, 
+        input_length = SEQ_LENGTH, 
+        name         = "embedding" 
+    )) 
+
+    # Tầng 2: Mạng hồi quy — chọn theo model_type 
+    if model_type == 'RNN': 
+        model.add(tf.keras.layers.SimpleRNN(HIDDEN_DIM, name="simple_rnn")) 
+    elif model_type == 'LSTM': 
+        # return_sequences=False: chỉ lấy hidden state của bước cuối cùng 
+        model.add(LSTM(HIDDEN_DIM, return_sequences=False, name="lstm")) 
+    elif model_type == 'BiLSTM': 
+        model.add(Bidirectional( 
+            LSTM(HIDDEN_DIM, return_sequences=False), 
+            name="bilstm" 
+        )) 
+
+    # Tầng 3: Regularization — chống Overfitting 
+    model.add(Dropout(0.3, name="dropout")) 
+
+    # Tầng 4: Dense ẩn với ReLU 
+    model.add(Dense(16, activation='relu', name="dense_hidden")) 
+
+    # Tầng 5: Output layer — Softmax cho Multi-class Classification 
+    # Output shape: (batch_size, NUM_CLASSES) 
+    model.add(Dense(NUM_CLASSES, activation='softmax', name="output")) 
+
+    # ── Compile ────────────────────────────────────────── 
+    # Optimizer : Adam — adaptive learning rate, phù hợp chuỗi thưa thớt 
+    # Loss      : categorical_crossentropy — phân loại đa lớp với one-hot 
+label 
+    # Metrics   : accuracy — dễ đối chiếu với baseline 
+    model.compile( 
+        optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3), 
+        loss      = 'categorical_crossentropy', 
+        metrics   = ['accuracy'] 
+    ) 
+    return model 
+
+3.4.3. Quy trình huấn luyện và các Callback quan trọng 
+
+import numpy as np 
+from sklearn.model_selection import train_test_split 
+from sklearn.metrics import accuracy_score, precision_score, recall_score, 
+f1_score 
+
+# ── Chia tập train/test ────────────────────────────── 
+X_train, X_test, y_train, y_test = train_test_split( 
+    X, y, test_size=0.2, random_state=42, stratify=np.argmax(y, axis=1) 
+) 
+
+# ── Callbacks ──────────────────────────────────────── 
+callbacks = [ 
+    # Lưu model tốt nhất dựa trên val_accuracy 
+    ModelCheckpoint( 
+        filepath        = 'model_best.keras', 
+        monitor         = 'val_accuracy', 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+        save_best_only  = True, 
+        mode            = 'max', 
+        verbose         = 1 
+    ), 
+    # Dừng sớm nếu val_accuracy không cải thiện sau 5 epoch liên tiếp 
+    EarlyStopping( 
+        monitor   = 'val_accuracy', 
+        patience  = 5, 
+        mode      = 'max', 
+        restore_best_weights = True 
+    ) 
+] 
+
+# ── Vòng lặp huấn luyện 3 kiến trúc ───────────────── 
+results   = {} 
+histories = {} 
+
+for m_type in ['RNN', 'LSTM', 'BiLSTM']: 
+    print(f"\n{'='*40}") 
+    print(f"  Huấn luyện mô hình: {m_type}") 
+    print(f"{'='*40}") 
+
+    model = build_model(m_type) 
+    hist  = model.fit( 
+        X_train, y_train, 
+        epochs           = 15, 
+        batch_size       = 32, 
+        validation_split = 0.1, 
+        callbacks        = callbacks, 
+        verbose          = 0 
+    ) 
+
+    # ── Đánh giá trên tập test ─────────────────────── 
+    y_pred = np.argmax(model.predict(X_test, verbose=0), axis=-1) 
+    y_true = np.argmax(y_test, axis=-1) 
+
+    results[m_type] = { 
+        'Accuracy'  : accuracy_score(y_true, y_pred), 
+        'Precision' : precision_score(y_true, y_pred, 
+                                      average='weighted', zero_division=0), 
+        'Recall'    : recall_score(y_true, y_pred, 
+                                   average='weighted', zero_division=0), 
+        'F1'        : f1_score(y_true, y_pred, 
+                               average='weighted', zero_division=0), 
+        'model'     : model 
+    } 
+    histories[m_type] = hist.history 
+Cấu hình Huấn luyện: Vì đây là bài toán Multi-class Classification có nhãn mã hóa dạng One-
+hot, nhóm sử dụng hàm mất mát (Loss Function) là categorical_crossentropy. Kết hợp với thuật 
+toán tối ưu Adam (Adaptive Moment Estimation), tốc độ học được tinh chỉnh tự động giúp mô 
+hình nhanh chóng hội tụ, vượt qua các điểm cực tiểu cục bộ (Local Minima). 
+Đánh giá Mô hình: Trong quá trình huấn luyện bằng model.fit(), tập dữ liệu huấn luyện được 
+chia theo Validation Split 80:20 để theo dõi hiện tượng Rò rỉ dữ liệu (Data Leakage) hoặc Học 
+vẹt (Overfitting). 
+
+ 
+ 
+ 
+ 
+ 
+3.4.4. Kết quả đánh giá và lựa chọn mô hình tốt nhất 
+
+Mô hình Accuracy Precision  Recall F1-Score 
+
+RNN 
+
+0.6845 
+
+0.6327 
+
+0.6845 0.6207 
+
+LSTM 
+
+0.6887 
+
+0.6505 
+
+0.6887 0.6240 
+
+BiLSTM  0.6845 
+
+0.6385 
+
+0.6845 0.6203 
+
+→ Mô hình LSTM được chọn và lưu thành model_best.keras để nạp vào Docker Container 
+của AI Service. 
+
+Phân tích: LSTM vượt trội nhờ cơ chế Memory Cell với ba cổng kiểm soát (Forget Gate — 
+quyết định thông tin nào cần quên; Input Gate — thông tin mới nào cần ghi nhớ; Output Gate — 
+thông tin nào được dùng để dự đoán). Cơ chế này giải quyết triệt để vấn đề Vanishing Gradient 
+của RNN truyền thống, đặc biệt hiệu quả khi chuỗi hành vi dài (người dùng view rồi nhiều ngày 
+sau mới purchase). 
+
+[HÌNH 3.2 — Bắt buộc phải có] 
+
+Mô tả hình cần vẽ: Hai biểu đồ đặt cạnh nhau. 
+
+•  Biểu đồ trái: Đường cong Validation Accuracy qua 15 epoch của 3 mô hình (3 
+
+đường màu khác nhau). Trục X: Epochs (0–14). Trục Y: Accuracy (0.3–0.7). LSTM có 
+đường ổn định nhất. 
+
+•  Biểu đồ phải: Biểu đồ cột (bar chart) so sánh 4 metrics 
+
+(Accuracy/Precision/Recall/F1) của 3 mô hình. 3 nhóm cột, mỗi nhóm 4 màu. 
+
+(Bạn có thể chụp màn hình trực tiếp từ kết quả chạy trên Google Colab và dán vào đây) 
+
+3.5. Thành phần 2 — Knowledge Graph với Neo4j 
+
+3.5.1. Lý do chọn Graph Database 
+
+Hệ quản trị CSDL quan hệ truyền thống (RDBMS) gặp khó khăn khi phải thực hiện JOIN nhiều 
+bảng để tìm mối liên hệ dạng: "Khách hàng A mua Sản phẩm B — Sản phẩm B cũng được mua 
+bởi Khách hàng C — Khách hàng C còn mua Sản phẩm D." Các truy vấn dạng này có độ phức 
+tạp tăng theo cấp số nhân với mỗi bậc quan hệ thêm vào. Neo4j giải quyết vấn đề này bằng cách 
+
+ 
+ 
+lưu trữ trực tiếp các mối quan hệ như cấu trúc dữ liệu đồ thị (Graph), giúp duyệt quan hệ nhiều 
+bậc với độ phức tạp tuyến tính. 
+
+3.5.2. Thiết kế Graph Schema 
+
+[HÌNH 3.3 — Bắt buộc phải có] 
+
+Mô tả hình cần vẽ: Graph Schema diagram. 
+
+        ┌─────────────┐ 
+        │    User     │ 
+        │  id: string │ 
+        └──────┬──────┘ 
+               │ 
+               │ [:INTERACTED] 
+               │  - action: string 
+               │    (view/click/search/compare/ 
+               │     wishlist/add_to_cart/ 
+               │     checkout/purchase) 
+               │  - timestamp: datetime 
+               │  - weight: float 
+               ▼ 
+        ┌─────────────┐ 
+        │   Product   │ 
+        │  id: string │ 
+        │  name: str  │ 
+        │  price: float│ 
+        └─────────────┘ 
+               │ 
+               │ [:SIMILAR] 
+               │  - score: float 
+               ▼ 
+        ┌─────────────┐ 
+        │   Product   │ 
+        │  (khác)     │ 
+        └─────────────┘ 
+
+Các loại Node: 
+
+•  User {id} — đại diện khách hàng 
+•  Product {id, name, price, category} — đại diện sản phẩm y tế 
+
+Các loại Relationship (Edge): 
+
+•  [:INTERACTED {action, timestamp}] — hành vi tương tác của User với Product 
+•  [:SIMILAR {score}] — độ tương đồng giữa hai sản phẩm (tính theo collaborative 
+
+ﬁltering) 
+
+ 
+ 
+3.5.3. Xây dựng Graph — Cypher Queries cốt lõi 
+
+// ── Bước 1: Tạo ràng buộc duy nhất (Constraints) ────────────────────────── 
+CREATE CONSTRAINT IF NOT EXISTS FOR (u:User)    REQUIRE u.id IS UNIQUE; 
+CREATE CONSTRAINT IF NOT EXISTS FOR (p:Product) REQUIRE p.id IS UNIQUE; 
+
+// ── Bước 2: Nạp dữ liệu hàng loạt bằng UNWIND (Batch Insertion) ────────── 
+// $batch là danh sách dictionary truyền từ Python driver 
+UNWIND $batch AS row 
+MERGE (u:User    {id: row.user_id}) 
+MERGE (p:Product {id: row.product_id}) 
+CREATE (u)-[:INTERACTED { 
+    action    : row.action, 
+    timestamp : row.timestamp, 
+    weight    : CASE row.action 
+                    WHEN 'purchase'    THEN 1.0 
+                    WHEN 'checkout'    THEN 0.8 
+                    WHEN 'add_to_cart' THEN 0.6 
+                    WHEN 'wishlist'    THEN 0.4 
+                    WHEN 'compare'     THEN 0.3 
+                    WHEN 'click'       THEN 0.2 
+                    ELSE 0.1  -- view, search 
+                END 
+}]->(p) 
+
+// ── Bước 3: Truy vấn gợi ý — Collaborative Filtering qua Graph ─────────── 
+// "Sản phẩm nào được mua bởi những người dùng cũng mua P015?" 
+MATCH (u:User)-[:INTERACTED {action: 'purchase'}]->(p:Product {id: 'P015'}) 
+      <-[:INTERACTED {action: 'purchase'}]-(other_user:User) 
+      -[:INTERACTED]->(rec:Product) 
+WHERE rec.id <> 'P015' 
+RETURN rec.id, count(*) AS freq 
+ORDER BY freq DESC 
+LIMIT 10 
+
+// ── Bước 4: Thống kê sản phẩm được mua nhiều nhất ──────────────────────── 
+MATCH (u:User)-[r:INTERACTED]->(p:Product) 
+WHERE r.action = 'purchase' 
+RETURN p.id, count(r) AS total_purchases 
+ORDER BY total_purchases DESC 
+LIMIT 20 
+
+// ── Bước 5: Xem lịch sử tương tác của một user cụ thể ──────────────────── 
+MATCH (u:User {id: 'U001'})-[r:INTERACTED]->(p:Product) 
+RETURN p.id, r.action, r.timestamp 
+ORDER BY r.timestamp ASC 
+
+3.6. Thành phần 3 — RAG (Retrieval-Augmented Generation) 
+
+3.6.1. Tại sao cần RAG? 
+
+Mô hình ngôn ngữ lớn (LLM) nếu chỉ dựa vào tri thức huấn luyện có sẵn sẽ gặp vấn đề 
+Hallucination — tức là tạo ra thông tin sai hoặc bịa đặt, đặc biệt nguy hiểm trong lĩnh vực y tế 
+
+ 
+ 
+ 
+ 
+ 
+(sai tên thuốc, sai liều lượng). RAG giải quyết vấn đề này bằng cách truy xuất tri thức thực tế 
+từ cơ sở dữ liệu đã kiểm chứng trước khi sinh câu trả lời, đảm bảo mọi lời tư vấn đều có căn 
+cứ. 
+
+3.6.2. Kiến trúc Multi-Retrieval RAG Agent 
+
+[HÌNH 3.4 — Bắt buộc phải có] 
+
+Mô tả hình cần vẽ: Pipeline RAG với hai nhánh retrieval. 
+
+Câu hỏi người dùng 
+("Tôi bị ho khan, nên dùng thuốc gì?") 
+         │ 
+         ▼ 
+┌─────────────────────┐ 
+│   LLM Router Agent  │  ← Gemini / GPT-4 
+│  (Phân loại intent) │ 
+└──────────┬──────────┘ 
+           │ 
+    ┌──────┴──────┐ 
+    │             │ 
+    ▼             ▼ 
+[GRAPH query]  [VECTOR query] 
+    │             │ 
+    ▼             ▼ 
+┌────────┐  ┌───────────────┐ 
+│ Neo4j  │  │ FAISS VectorDB│ 
+│AuraDB  │  │(medical_kb.csv│ 
+│        │  │ embedded)     │ 
+└───┬────┘  └──────┬────────┘ 
+    │              │ 
+    └──────┬───────┘ 
+           │ 
+           ▼ 
+┌─────────────────────┐ 
+│   LLM Generator     │ 
+│  (Gemini Flash)     │ 
+│  Prompt = Context   │ 
+│        + Question   │ 
+└──────────┬──────────┘ 
+           │ 
+           ▼ 
+┌─────────────────────┐ 
+│   Structured Output │ 
+│  - Lời tư vấn       │ 
+│  - Product Mini-Card│ 
+│  - Intent dự đoán   │ 
+└─────────────────────┘ 
+
+Hai nhánh retrieval: 
+
+ 
+Nhánh 
+
+Công cụ 
+
+Khi nào kích hoạt 
+
+Ví dụ câu hỏi 
+
+Graph 
+Retrieval 
+
+Neo4j + 
+GraphCypherQAChain 
+
+Câu hỏi thống kê, 
+hành vi người dùng 
+
+"Sản phẩm P001 có bao 
+nhiêu lượt mua?" 
+
+Vector 
+Retrieval 
+
+FAISS + HuggingFace 
+Embeddings 
+
+Câu hỏi tư vấn y 
+khoa, triệu chứng 
+
+"Tôi bị đau đầu nên dùng 
+thuốc gì?" 
+
+3.6.3. Xây dựng FAISS Vector Database 
+
+from langchain.embeddings    import HuggingFaceEmbeddings 
+from langchain.vectorstores  import FAISS 
+from langchain.schema        import Document 
+import pandas as pd 
+
+# ── Nạp kho tri thức y khoa ────────────────────────────────────────────── 
+medical_df = pd.read_csv('medical_kb.csv') 
+# Cột: product_id | name | symptoms | dosage | price | contraindications 
+
+# ── Tạo Documents cho LangChain ────────────────────────────────────────── 
+documents = [] 
+for _, row in medical_df.iterrows(): 
+    content = ( 
+        f"Thuốc: {row['name']} (Mã: {row['product_id']})\n" 
+        f"Triệu chứng điều trị: {row['symptoms']}\n" 
+        f"Liều dùng: {row['dosage']}\n" 
+        f"Chống chỉ định: {row['contraindications']}\n" 
+        f"Giá bán: {row['price']:,.0f} VNĐ" 
+    ) 
+    documents.append(Document( 
+        page_content = content, 
+        metadata     = {'product_id': row['product_id'], 'price': 
+row['price']} 
+    )) 
+
+# ── Tạo Embedding bằng mô hình đa ngôn ngữ ─────────────────────────────── 
+# Chọn model hỗ trợ tiếng Việt 
+embeddings = HuggingFaceEmbeddings( 
+    model_name = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-
+v2" 
+) 
+
+# ── Build và lưu FAISS Index ────────────────────────────────────────────── 
+vectorstore = FAISS.from_documents(documents, embeddings) 
+vectorstore.save_local("faiss_medical_index") 
+
+# ── Tìm kiếm tương đồng (Similarity Search) ────────────────────────────── 
+def retrieve_medical_context(query: str, k: int = 3) -> str: 
+    """ 
+    Truy xuất k tài liệu y khoa liên quan nhất với câu hỏi. 
+    Sử dụng cosine similarity trên không gian vector embedding. 
+    """ 
+    results = vectorstore.similarity_search(query, k=k) 
+
+ 
+ 
+ 
+ 
+ 
+    return "\n\n".join([doc.page_content for doc in results]) 
+
+# Ví dụ: 
+# retrieve_medical_context("thuốc trị ho khan") 
+# → Trả về thông tin 3 loại thuốc liên quan nhất đến triệu chứng ho khan 
+
+3.6.4. LLM Router Agent (LangChain + Gemini) 
+
+from langchain_google_genai  import ChatGoogleGenerativeAI 
+from langchain.agents        import initialize_agent, Tool 
+from langchain_community.chains.graph_qa.cypher import GraphCypherQAChain 
+
+# ── Khởi tạo LLM ───────────────────────────────────────────────────────── 
+llm = ChatGoogleGenerativeAI( 
+    model       = "gemini-1.5-flash", 
+    temperature = 0.2  # Thấp để đảm bảo tính chính xác y khoa 
+) 
+
+# ── Tool 1: Graph Query Tool ────────────────────────────────────────────── 
+graph_chain = GraphCypherQAChain.from_llm(llm=llm, graph=neo4j_graph, 
+verbose=True) 
+
+graph_tool = Tool( 
+    name        = "GraphStatsTool", 
+    func        = graph_chain.run, 
+    description = ( 
+        "Dùng khi người dùng hỏi về THỐNG KÊ, SỐ LƯỢNG, LỊCH SỬ MUA HÀNG. " 
+        "Ví dụ: 'Sản phẩm nào bán chạy nhất?', 'User U001 đã mua gì?'" 
+    ) 
+) 
+
+# ── Tool 2: Medical Vector RAG Tool ────────────────────────────────────── 
+def medical_rag_tool(query: str) -> str: 
+    context  = retrieve_medical_context(query, k=3) 
+    prompt   = ( 
+        f"Bạn là Dược sĩ tư vấn chuyên nghiệp. " 
+        f"Dựa trên thông tin sau:\n{context}\n\n" 
+        f"Trả lời câu hỏi: {query}\n" 
+        f"Luôn đề xuất mã sản phẩm cụ thể và khuyến nghị gặp bác sĩ nếu cần." 
+    ) 
+    return llm.predict(prompt) 
+
+vector_tool = Tool( 
+    name        = "MedicalRAGTool", 
+    func        = medical_rag_tool, 
+    description = ( 
+        "Dùng khi người dùng hỏi về TRIỆU CHỨNG, TƯ VẤN THUỐC, Y TẾ. " 
+        "Ví dụ: 'Tôi bị ho khan', 'Thuốc hạ sốt nào phù hợp?'" 
+    ) 
+) 
+
+# ── Khởi tạo Router Agent ───────────────────────────────────────────────── 
+agent = initialize_agent( 
+    tools        = [graph_tool, vector_tool], 
+    llm          = llm, 
+    agent        = "zero-shot-react-description", 
+    verbose      = True, 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    handle_parsing_errors = True 
+) 
+
+3.7. Kết hợp Hybrid — Tích hợp ba thành phần 
+
+import tensorflow as tf 
+import numpy as np 
+
+# Nạp mô hình LSTM đã huấn luyện 
+lstm_model = tf.keras.models.load_model('model_best.keras') 
+
+def predict_intent(user_behavior_sequence: list) -> str: 
+    """ 
+    Dự đoán hành vi tiếp theo dựa trên chuỗi 4 hành vi gần nhất. 
+
+    Args: 
+        user_behavior_sequence: Danh sách 4 action_id (int) 
+    Returns: 
+        Nhãn hành vi dự đoán (string) 
+    """ 
+    ACTION_LABELS = ['view','click','search','compare', 
+                     'wishlist','add_to_cart','checkout','purchase'] 
+    x      = np.array([user_behavior_sequence])          # shape: (1, 4) 
+    pred   = lstm_model.predict(x, verbose=0)            # shape: (1, 8) 
+    idx    = np.argmax(pred, axis=-1)[0] 
+    return ACTION_LABELS[idx] 
+
+def ai_chat_endpoint(user_id: str, query: str) -> dict: 
+    """ 
+    Endpoint chính của AI Service: kết hợp LLM Router + Intent Prediction. 
+
+    Returns: 
+        JSON chứa: response (str), predicted_intent (str), router_path (str) 
+    """ 
+    # 1. Lấy chuỗi hành vi gần nhất từ Neo4j 
+    recent_actions = get_recent_actions_from_graph(user_id, limit=4) 
+
+    # 2. Dự đoán intent bằng LSTM 
+    predicted_intent = predict_intent(recent_actions) if len(recent_actions) 
+== 4 else "unknown" 
+
+    # 3. Sinh câu trả lời bằng LLM Router (Graph hoặc Vector tùy câu hỏi) 
+    response = agent.run(query) 
+
+    return { 
+        "user_id"          : user_id, 
+        "response"         : response, 
+        "predicted_intent" : predicted_intent, 
+        "router_path"      : "auto-selected by LangChain Agent" 
+    } 
+
+ 
+ 
+ 
+     
+ 
+     
+ 
+ 
+ 
+ 
+3.8. Triển khai AI Service vào hệ thống Microservices 
+
+3.8.1. Cấu trúc thư mục AI Service 
+
+ai-service/ 
+├── main.py              # FastAPI app — định nghĩa endpoints 
+├── model_best.keras     # LSTM model đã huấn luyện (nạp vào RAM khi start) 
+├── faiss_medical_index/ # FAISS index đã build 
+│   ├── index.faiss 
+│   └── index.pkl 
+├── medical_kb.csv       # Kho tri thức y khoa (50 toa thuốc) 
+├── requirements.txt 
+└── Dockerfile 
+
+3.8.2. FastAPI Endpoints 
+
+from fastapi import FastAPI, HTTPException 
+from pydantic import BaseModel 
+
+app = FastAPI(title="AI Service — HealthCare Pharmacy", version="1.0") 
+
+class ChatRequest(BaseModel): 
+    user_id : str 
+    query   : str 
+
+class ChatResponse(BaseModel): 
+    user_id          : str 
+    response         : str 
+    predicted_intent : str 
+    router_path      : str 
+
+@app.get("/health/") 
+async def health_check(): 
+    """Kiểm tra trạng thái hoạt động của tất cả components.""" 
+    return { 
+        "status"      : "healthy", 
+        "lstm_loaded" : lstm_model is not None, 
+        "faiss_ready" : vectorstore is not None, 
+        "neo4j_ready" : neo4j_graph is not None 
+    } 
+
+@app.post("/api/chat", response_model=ChatResponse) 
+async def chat(request: ChatRequest): 
+    """Endpoint tư vấn sản phẩm kết hợp LSTM + Graph + RAG.""" 
+    try: 
+        result = ai_chat_endpoint(request.user_id, request.query) 
+        return result 
+    except Exception as e: 
+        raise HTTPException(status_code=500, detail=str(e)) 
+
+@app.get("/api/recommend") 
+async def recommend(user_id: str, top_k: int = 5): 
+    """Gợi ý sản phẩm dựa trên Graph collaborative filtering.""" 
+    cypher = f""" 
+        MATCH (u:User {{id: '{user_id}'}})-[:INTERACTED]->(p:Product) 
+              <-[:INTERACTED]-(similar_user:User) 
+
+ 
+ 
+ 
+ 
+ 
+ 
+              -[:INTERACTED {{action: 'purchase'}}]->(rec:Product) 
+        WHERE NOT (u)-[:INTERACTED]->(rec) 
+        RETURN rec.id AS product_id, count(*) AS score 
+        ORDER BY score DESC LIMIT {top_k} 
+    """ 
+    results = neo4j_graph.query(cypher) 
+    return {"user_id": user_id, "recommendations": results} 
+
+3.8.3. Dockerﬁle và docker-compose 
+
+# ai-service/Dockerfile 
+FROM python:3.10-slim 
+
+WORKDIR /app 
+
+# Cài dependencies trước để tận dụng Docker layer cache 
+COPY requirements.txt . 
+RUN pip install --no-cache-dir -r requirements.txt 
+
+# Copy toàn bộ source và model files 
+COPY . . 
+
+# Expose port AI Service 
+EXPOSE 8006 
+
+# Khởi động FastAPI với uvicorn 
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8006"] 
+# docker-compose.yml (phần AI Service) 
+version: '3.8' 
+
+services: 
+  ai-service: 
+    build: ./ai-service 
+    ports: 
+      - "8006:8006" 
+    environment: 
+      - NEO4J_URI=neo4j+s://xxxx.databases.neo4j.io 
+      - NEO4J_USER=neo4j 
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD} 
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY} 
+    volumes: 
+      - ./ai-service/faiss_medical_index:/app/faiss_medical_index 
+    depends_on: 
+      - gateway 
+    restart: unless-stopped 
+    healthcheck: 
+      test: ["CMD", "curl", "-f", "http://localhost:8006/health/"] 
+      interval: 30s 
+      timeout: 10s 
+      retries: 3 
+
+  gateway: 
+    image: nginx:alpine 
+    ports: 
+      - "80:80" 
+    volumes: 
+      - ./gateway/nginx.conf:/etc/nginx/nginx.conf 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+# gateway/nginx.conf — thêm route cho AI Service 
+location /api/chat { 
+    proxy_pass         http://ai-service:8006; 
+    proxy_set_header   Host $host; 
+    proxy_read_timeout 60s;  # RAG có thể cần thời gian xử lý 
+} 
+
+location /api/recommend { 
+    proxy_pass http://ai-service:8006; 
+} 
+
+3.9. Checklist đánh giá Chương 3 
+
+Hạng mục 
+
+Yêu cầu 
+
+Hình/Mục tham chiếu 
+
+Kiến trúc AI Pipeline Sơ đồ end-to-end đầy đủ 
+
+Hình 3.1 
+
+Deep Learning 
+
+LSTM + so sánh 3 kiến trúc + metrics  Hình 3.2, Mục 3.4 
+
+Knowledge Graph  Graph Schema + Cypher queries 
+
+Hình 3.3, Mục 3.5 
+
+RAG Pipeline 
+
+Hai nhánh retrieval + LLM Router 
+
+Hình 3.4, Mục 3.6 
+
+Hybrid kết hợp 
+
+Code tích hợp 3 thành phần 
+
+Mục 3.7 
+
+Deploy 
+
+Dockerﬁle + docker-compose + nginx Mục 3.8 
+
+FastAPI Endpoints 
+
+/health/, /api/chat, /api/recommend  Mục 3.8.2 
+
+3.10. Kết luận Chương 3 
+
+AI Service được xây dựng theo kiến trúc ba tầng độc lập nhưng phối hợp chặt chẽ: mô hình 
+LSTM phân tích hành vi tuần tự để dự đoán intent; Knowledge Graph Neo4j lưu trữ và truy vấn 
+mối quan hệ phức tạp giữa người dùng và sản phẩm; RAG với FAISS đảm bảo mọi lời tư vấn y 
+khoa đều có căn cứ từ kho tri thức đã kiểm chứng. Sự kết hợp ba phương pháp này tạo ra một hệ 
+thống tư vấn vừa chính xác về y khoa (RAG chống hallucination), vừa cá nhân hóa theo hành 
+vi (LSTM + Graph), phù hợp với yêu cầu nghiêm ngặt của lĩnh vực dược phẩm trực tuyến. 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+CHƯƠNG 4: XÂY DỰNG HỆ THỐNG HOÀN CHỈNH 
+
+4.1. Kiến trúc tổng thể hệ thống 
+
+4.1.1. Tổng quan 
+
+Hệ thống ecom-final được xây dựng theo kiến trúc Microservices thuần tuý, triển khai hoàn toàn 
+trên nền tảng Docker Container. Mỗi thành phần nghiệp vụ là một Django/FastAPI project độc 
+lập, giao tiếp qua REST API thông qua một API Gateway trung tâm (Nginx). 
+
+[HÌNH 4.1 — Bắt buộc phải có] 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Mô tả hình cần vẽ: Sơ đồ kiến trúc hệ thống hoàn chỉnh (System Architecture Diagram). 
+
+                    ┌─────────────────┐ 
+                    │  Web Browser /  │ 
+                    │   Mobile App    │ 
+                    └────────┬────────┘ 
+                             │ HTTP Request 
+                             ▼ 
+                    ┌─────────────────┐ 
+                    │  API Gateway    │ 
+                    │  (Nginx :80)    │  ← JWT Verify, Rate Limit, Routing 
+                    └────────┬────────┘ 
+           ┌─────────────────┼──────────────────────────────────┐ 
+           │                 │                  │                │ 
+           ▼                 ▼                  ▼                ▼ 
+   ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ 
+   │ user-service │  │product-service│  │ cart-service │  │order-service │ 
+   │  Django:8000 │  │  Django:8001  │  │  Django:8002 │  │  Django:8003 │ 
+   └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘ 
+          │                 │                  │                  │ 
+        MySQL           PostgreSQL          PostgreSQL         PostgreSQL 
+      (user_db)        (product_db)         (cart_db)         (order_db) 
+
+           ┌─────────────────┬──────────────────┐ 
+           ▼                 ▼                  ▼ 
+   ┌──────────────┐  ┌──────────────┐  ┌──────────────┐ 
+   │payment-service│  │shipping-svc  │  │  ai-service  │ 
+   │  Django:8004  │  │  Django:8005 │  │  FastAPI:8006│ 
+   └──────┬───────┘  └──────┬───────┘  └──────┬───────┘ 
+          │                 │                  │ 
+       PostgreSQL        PostgreSQL       Neo4j + FAISS 
+      (payment_db)      (shipping_db)    (Graph + Vector) 
+
+4.1.2. Cấu trúc thư mục dự án 
+
+ecom-final/ 
+├── gateway/ 
+│   └── nginx.conf              # Cấu hình API Gateway 
+├── user-service/ 
+│   ├── manage.py 
+│   ├── users/ 
+│   │   ├── models.py 
+│   │   ├── views.py 
+│   │   ├── serializers.py 
+│   │   └── urls.py 
+│   ├── requirements.txt 
+│   └── Dockerfile 
+├── product-service/            # Tương tự user-service 
+├── cart-service/ 
+├── order-service/ 
+├── payment-service/ 
+├── shipping-service/ 
+├── ai-service/ 
+│   ├── main.py                 # FastAPI 
+│   ├── model_best.keras 
+
+            
+ 
+│   └── Dockerfile 
+├── infrastructure/ 
+│   ├── docker-compose.yml      # Orchestration toàn bộ hệ thống 
+│   └── .env                    # Biến môi trường bí mật 
+└── README.md 
+
+4.2. API Gateway — Nginx 
+
+4.2.1. Vai trò và trách nhiệm 
+
+API Gateway là điểm vào duy nhất của toàn hệ thống, đảm nhiệm ba nhiệm vụ chính: 
+
+•  Routing: Phân phối request đến đúng service dựa trên URL preﬁx. 
+•  Authentication proxy: Chuyển tiếp token để các service có thể verify. 
+•  Rate Limiting & Logging: Kiểm soát lưu lượng và ghi nhận log truy cập. 
+
+4.2.2. Cấu hình Nginx đầy đủ 
+
+# gateway/nginx.conf 
+
+events { 
+    worker_connections 1024; 
+} 
+
+http { 
+    # ── Định nghĩa upstream cho từng service ───────────────────────────── 
+    upstream user_service     { server user-service:8000; } 
+    upstream product_service  { server product-service:8001; } 
+    upstream cart_service     { server cart-service:8002; } 
+    upstream order_service    { server order-service:8003; } 
+    upstream payment_service  { server payment-service:8004; } 
+    upstream shipping_service { server shipping-service:8005; } 
+    upstream ai_service       { server ai-service:8006; } 
+
+    # ── Cấu hình log format ─────────────────────────────────────────────── 
+    log_format main '$remote_addr - $remote_user [$time_local] ' 
+                    '"$request" $status $body_bytes_sent ' 
+                    '"$http_referer" "$http_user_agent"'; 
+    access_log /var/log/nginx/access.log main; 
+
+    server { 
+        listen 80; 
+        server_name localhost; 
+
+        # ── Giới hạn kích thước request body ───────────────────────────── 
+        client_max_body_size 10M; 
+
+        # ── Route: User & Auth Service ──────────────────────────────────── 
+        # Mọi request bắt đầu bằng /auth/ hoặc /users/ → user-service 
+        location ~ ^/(auth|users)/ { 
+            proxy_pass         http://user_service; 
+            proxy_set_header   Host              $host; 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+            proxy_set_header   X-Real-IP         $remote_addr; 
+            proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for; 
+            proxy_connect_timeout 30s; 
+            proxy_read_timeout    30s; 
+        } 
+
+        # ── Route: Product Service ──────────────────────────────────────── 
+        location ~ ^/(products|categories)/ { 
+            proxy_pass         http://product_service; 
+            proxy_set_header   Host $host; 
+            proxy_set_header   X-Real-IP $remote_addr; 
+        } 
+
+        # ── Route: Cart Service ─────────────────────────────────────────── 
+        location /cart/ { 
+            proxy_pass         http://cart_service; 
+            proxy_set_header   Host $host; 
+            proxy_set_header   X-Real-IP $remote_addr; 
+        } 
+
+        # ── Route: Order Service ────────────────────────────────────────── 
+        location /orders/ { 
+            proxy_pass         http://order_service; 
+            proxy_set_header   Host $host; 
+            proxy_set_header   X-Real-IP $remote_addr; 
+        } 
+
+        # ── Route: Payment Service ──────────────────────────────────────── 
+        location /payment/ { 
+            proxy_pass         http://payment_service; 
+            proxy_set_header   Host $host; 
+            proxy_set_header   X-Real-IP $remote_addr; 
+        } 
+
+        # ── Route: Shipping Service ─────────────────────────────────────── 
+        location /shipping/ { 
+            proxy_pass         http://shipping_service; 
+            proxy_set_header   Host $host; 
+            proxy_set_header   X-Real-IP $remote_addr; 
+        } 
+
+        # ── Route: AI Service (timeout cao hơn do xử lý nặng) ──────────── 
+        location ~ ^/api/(chat|recommend|health)/ { 
+            proxy_pass         http://ai_service; 
+            proxy_set_header   Host $host; 
+            proxy_set_header   X-Real-IP $remote_addr; 
+            proxy_read_timeout 60s;  # RAG cần thời gian xử lý dài hơn 
+        } 
+
+        # ── Health check tổng thể ───────────────────────────────────────── 
+        location /health { 
+            return 200 'API Gateway OK\n'; 
+            add_header Content-Type text/plain; 
+        } 
+    } 
+} 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Diễn giải: Cấu hình sử dụng upstream block để định nghĩa từng service một lần, sau đó dùng 
+proxy_pass để forward request. Docker Compose đảm bảo các tên hostname như user-
+service, product-service được resolve tự động trong mạng nội bộ container. 
+
+4.3. Authentication — JWT 
+
+4.3.1. Luồng xác thực JWT End-to-End 
+
+[HÌNH 4.2 — Bắt buộc phải có] 
+
+Mô tả hình cần vẽ: Sequence Diagram luồng JWT Authentication. 
+
+Client          API Gateway       user-service      Other Services 
+  │                  │                 │                   │ 
+  │  POST /auth/login│                 │                   │ 
+  │─────────────────>│                 │                   │ 
+  │                  │  forward request│                   │ 
+  │                  │────────────────>│                   │ 
+  │                  │                 │ Verify credentials│ 
+  │                  │                 │ Generate JWT      │ 
+  │                  │  access_token   │                   │ 
+  │                  │<────────────────│                   │ 
+  │  {access_token}  │                 │                   │ 
+  │<─────────────────│                 │                   │ 
+  │                  │                 │                   │ 
+  │  GET /orders/    │                 │                   │ 
+  │  Authorization:  │                 │                   │ 
+  │  Bearer <token>  │                 │                   │ 
+  │─────────────────>│                 │                   │ 
+  │                  │ forward + token │                   │ 
+  │                  │────────────────────────────────────>│ 
+  │                  │                 │   Verify token    │ 
+  │                  │                 │   (SimpleJWT)     │ 
+  │                  │                 │   Return data     │ 
+  │                  │<────────────────────────────────────│ 
+  │  Response data   │                 │                   │ 
+  │<─────────────────│                 │                   │ 
+
+4.3.2. Cài đặt JWT trong User Service (Django) 
+
+# user-service/users/models.py 
+
+from django.contrib.auth.models import AbstractUser 
+from django.db import models 
+
+class User(AbstractUser): 
+    """ 
+    Model User tuỳ chỉnh, kế thừa AbstractUser của Django. 
+
+ 
+ 
+ 
+ 
+ 
+    Bổ sung trường `role` để phục vụ phân quyền RBAC. 
+    """ 
+    class Role(models.TextChoices): 
+        ADMIN    = 'admin',    'Admin' 
+        STAFF    = 'staff',    'Staff' 
+        CUSTOMER = 'customer', 'Customer' 
+
+    role = models.CharField( 
+        max_length = 20, 
+        choices    = Role.choices, 
+        default    = Role.CUSTOMER 
+    ) 
+
+    class Meta: 
+        db_table = 'users' 
+
+    def __str__(self): 
+        return f"{self.username} ({self.role})" 
+# user-service/users/serializers.py 
+
+from rest_framework import serializers 
+from django.contrib.auth.password_validation import validate_password 
+from .models import User 
+
+class RegisterSerializer(serializers.ModelSerializer): 
+    """ 
+    Serializer cho đăng ký tài khoản mới. 
+    Tự động hash password trước khi lưu vào DB. 
+    """ 
+    password  = serializers.CharField(write_only=True, 
+                                      validators=[validate_password]) 
+    password2 = serializers.CharField(write_only=True, label="Xác nhận mật 
+khẩu") 
+
+    class Meta: 
+        model  = User 
+        fields = ('username', 'email', 'password', 'password2', 'role') 
+
+    def validate(self, attrs): 
+        if attrs['password'] != attrs['password2']: 
+            raise serializers.ValidationError({"password": "Mật khẩu không 
+khớp."}) 
+        return attrs 
+
+    def create(self, validated_data): 
+        validated_data.pop('password2') 
+        # create_user() tự động gọi set_password() để hash 
+        user = User.objects.create_user(**validated_data) 
+        return user 
+
+class UserSerializer(serializers.ModelSerializer): 
+    class Meta: 
+        model  = User 
+        fields = ('id', 'username', 'email', 'role', 'date_joined') 
+# user-service/users/views.py 
+
+from rest_framework             import generics, status 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+from rest_framework.response    import Response 
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny 
+from rest_framework.views       import APIView 
+from rest_framework_simplejwt.tokens import RefreshToken 
+
+from .models       import User 
+from .serializers  import RegisterSerializer, UserSerializer 
+
+class RegisterView(generics.CreateAPIView): 
+    """ 
+    POST /auth/register 
+    Cho phép bất kỳ ai đăng ký tài khoản Customer. 
+    """ 
+    queryset         = User.objects.all() 
+    serializer_class = RegisterSerializer 
+    permission_classes = [AllowAny] 
+
+    def create(self, request, *args, **kwargs): 
+        serializer = self.get_serializer(data=request.data) 
+        serializer.is_valid(raise_exception=True) 
+        user = serializer.save() 
+
+        # Tự sinh JWT token ngay sau khi đăng ký thành công 
+        refresh = RefreshToken.for_user(user) 
+        return Response({ 
+            "message"      : "Đăng ký thành công!", 
+            "user"         : UserSerializer(user).data, 
+            "access_token" : str(refresh.access_token), 
+            "refresh_token": str(refresh), 
+        }, status=status.HTTP_201_CREATED) 
+
+class ProfileView(generics.RetrieveUpdateAPIView): 
+    """ 
+    GET  /users/me/   — Xem thông tin cá nhân 
+    PUT  /users/me/   — Cập nhật thông tin 
+    """ 
+    serializer_class   = UserSerializer 
+    permission_classes = [IsAuthenticated] 
+
+    def get_object(self): 
+        # Trả về chính user đang gửi request (lấy từ JWT token) 
+        return self.request.user 
+
+class UserListView(generics.ListAPIView): 
+    """ 
+    GET /users/   — Chỉ Admin mới được xem danh sách toàn bộ user 
+    """ 
+    queryset           = User.objects.all() 
+    serializer_class   = UserSerializer 
+    permission_classes = [IsAdminUser] 
+# user-service/core/settings.py (phần JWT) 
+
+from datetime import timedelta 
+
+INSTALLED_APPS = [ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    # ... django defaults ... 
+    'rest_framework', 
+    'rest_framework_simplejwt', 
+    'users', 
+] 
+
+REST_FRAMEWORK = { 
+    'DEFAULT_AUTHENTICATION_CLASSES': ( 
+        # Sử dụng JWT thay cho Session Authentication mặc định 
+        'rest_framework_simplejwt.authentication.JWTAuthentication', 
+    ), 
+    'DEFAULT_PERMISSION_CLASSES': ( 
+        # Mặc định yêu cầu xác thực cho tất cả endpoints 
+        'rest_framework.permissions.IsAuthenticated', 
+    ), 
+} 
+
+SIMPLE_JWT = { 
+    # Access token hết hạn sau 60 phút 
+    'ACCESS_TOKEN_LIFETIME'  : timedelta(minutes=60), 
+    # Refresh token hết hạn sau 7 ngày 
+    'REFRESH_TOKEN_LIFETIME' : timedelta(days=7), 
+    # Tự động cấp refresh token mới khi dùng refresh 
+    'ROTATE_REFRESH_TOKENS'  : True, 
+    'ALGORITHM'              : 'HS256', 
+    'AUTH_HEADER_TYPES'      : ('Bearer',), 
+} 
+
+Diễn giải: SimpleJWT tự động xử lý việc sinh và verify token. Khi client gửi request kèm 
+Authorization: Bearer <token>, middleware của Django REST Framework sẽ giải mã 
+token, trích xuất user_id và inject vào request.user — các view không cần tự viết logic 
+verify. 
+
+4.4. Giao tiếp giữa các Service 
+
+4.4.1. Pattern gọi API nội bộ có xử lý lỗi 
+
+# shared/service_client.py 
+# Module dùng chung cho tất cả service khi cần gọi service khác 
+
+import requests 
+import logging 
+from typing import Optional, Dict, Any 
+
+logger = logging.getLogger(__name__) 
+
+class ServiceClient: 
+    """ 
+    Client chuẩn để giao tiếp giữa các Microservice. 
+    Tích hợp: Timeout, Retry, Error Handling, Logging. 
+    """ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    # URL nội bộ Docker — dùng service name làm hostname 
+    SERVICE_URLS = { 
+        'user'     : 'http://user-service:8000', 
+        'product'  : 'http://product-service:8001', 
+        'cart'     : 'http://cart-service:8002', 
+        'order'    : 'http://order-service:8003', 
+        'payment'  : 'http://payment-service:8004', 
+        'shipping' : 'http://shipping-service:8005', 
+        'ai'       : 'http://ai-service:8006', 
+    } 
+
+    def __init__(self, service_name: str, timeout: int = 10): 
+        self.base_url = self.SERVICE_URLS[service_name] 
+        self.timeout  = timeout 
+
+    def get(self, path: str, token: Optional[str] = None, 
+            params: Optional[Dict] = None) -> Dict[str, Any]: 
+        """ 
+        Gửi GET request đến service, kèm JWT token nếu có. 
+        Tự động retry 2 lần khi gặp lỗi kết nối. 
+        """ 
+        headers = {} 
+        if token: 
+            headers['Authorization'] = f'Bearer {token}' 
+
+        for attempt in range(3):  # Retry tối đa 3 lần 
+            try: 
+                response = requests.get( 
+                    url     = f"{self.base_url}{path}", 
+                    headers = headers, 
+                    params  = params, 
+                    timeout = self.timeout 
+                ) 
+                response.raise_for_status()  # Raise nếu status >= 400 
+                return response.json() 
+
+            except requests.exceptions.ConnectionError: 
+                logger.warning(f"[Attempt {attempt+1}] Cannot connect to 
+{self.base_url}") 
+                if attempt == 2: 
+                    raise Exception(f"Service {self.base_url} không khả 
+dụng.") 
+
+            except requests.exceptions.Timeout: 
+                logger.error(f"Timeout khi gọi {self.base_url}{path}") 
+                raise Exception(f"Timeout: Service phản hồi quá chậm.") 
+
+            except requests.exceptions.HTTPError as e: 
+                logger.error(f"HTTP Error {e.response.status_code}: 
+{e.response.text}") 
+                raise Exception(f"Lỗi từ service: {e.response.status_code}") 
+
+    def post(self, path: str, data: Dict, 
+             token: Optional[str] = None) -> Dict[str, Any]: 
+        """Gửi POST request với JSON body.""" 
+        headers = {'Content-Type': 'application/json'} 
+        if token: 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+            headers['Authorization'] = f'Bearer {token}' 
+
+        response = requests.post( 
+            url     = f"{self.base_url}{path}", 
+            json    = data, 
+            headers = headers, 
+            timeout = self.timeout 
+        ) 
+        response.raise_for_status() 
+        return response.json() 
+
+4.5. Luồng mua hàng End-to-End — Code hoàn chỉnh 
+
+Đây là phần quan trọng nhất của Chương 4, thể hiện cách các service phối hợp để hoàn thành 
+một giao dịch mua hàng. 
+
+[HÌNH 4.3 — Bắt buộc phải có] 
+
+Mô tả hình cần vẽ: Flowchart luồng mua hàng với các điều kiện rẽ nhánh. 
+
+[User Login] ──> [Nhận JWT Token] 
+      │ 
+      ▼ 
+[Xem sản phẩm] ──> [Chọn sản phẩm] 
+      │ 
+      ▼ 
+[POST /cart/add] ──> [cart-service lưu CartItem] 
+      │ 
+      ▼ 
+[POST /orders/] ──> [order-service tạo Order] 
+      │               └── Gọi cart-service lấy giỏ hàng 
+      │               └── Tạo OrderItems từ CartItems 
+      │               └── Trả về order_id 
+      ▼ 
+[POST /payment/pay] ──> [payment-service xử lý] 
+      │                       │ 
+      │                  ┌────┴────┐ 
+      │                  │         │ 
+      │               SUCCESS   FAILED 
+      │                  │         │ 
+      │                  ▼         ▼ 
+      │        [Cập nhật Order  [Trả lỗi 
+      │         status=PAID]    cho User] 
+      │                  │ 
+      │                  ▼ 
+      │        [POST /shipping/create] 
+      │        [shipping-service tạo Shipment] 
+      │                  │ 
+      ▼                  ▼ 
+[Phản hồi   ]   [Trạng thái: PROCESSING 
+
+ 
+ 
+ 
+ User: OK   ]    → SHIPPING → DELIVERED] 
+
+4.5.1. Order Service — Tạo đơn hàng từ giỏ 
+
+# order-service/orders/views.py 
+
+from rest_framework             import generics, status 
+from rest_framework.response    import Response 
+from rest_framework.permissions import IsAuthenticated 
+from rest_framework.decorators  import api_view, permission_classes 
+import logging 
+
+from .models          import Order, OrderItem 
+from .serializers     import OrderSerializer 
+from shared.service_client import ServiceClient 
+
+logger = logging.getLogger(__name__) 
+
+@api_view(['POST']) 
+@permission_classes([IsAuthenticated]) 
+def create_order(request): 
+    """ 
+    POST /orders/ 
+
+    Luồng xử lý: 
+    1. Lấy JWT token từ request header 
+    2. Gọi cart-service để lấy giỏ hàng của user 
+    3. Validate giỏ hàng không rỗng 
+    4. Tạo Order và các OrderItem từ CartItem 
+    5. Trả về order_id để client tiếp tục thanh toán 
+    """ 
+    user_id = request.user.id 
+    token   = request.META.get('HTTP_AUTHORIZATION', '').split(' ')[-1] 
+
+    # ── Bước 1: Lấy giỏ hàng từ cart-service ───────────────────────────── 
+    try: 
+        cart_client  = ServiceClient('cart') 
+        cart_data    = cart_client.get(f'/cart/{user_id}/', token=token) 
+        cart_items   = cart_data.get('items', []) 
+    except Exception as e: 
+        logger.error(f"Lỗi khi gọi cart-service: {e}") 
+        return Response( 
+            {"error": "Không thể lấy thông tin giỏ hàng. Vui lòng thử lại."}, 
+            status=status.HTTP_503_SERVICE_UNAVAILABLE 
+        ) 
+
+    # ── Bước 2: Validate giỏ hàng ──────────────────────────────────────── 
+    if not cart_items: 
+        return Response( 
+            {"error": "Giỏ hàng trống. Vui lòng thêm sản phẩm trước khi đặt 
+hàng."}, 
+            status=status.HTTP_400_BAD_REQUEST 
+        ) 
+
+    # ── Bước 3: Tính tổng tiền và tạo Order ────────────────────────────── 
+
+ 
+ 
+ 
+ 
+ 
+     
+ 
+ 
+ 
+    total_price = sum( 
+        item['quantity'] * item['unit_price'] 
+        for item in cart_items 
+    ) 
+
+    order = Order.objects.create( 
+        user_id     = user_id, 
+        total_price = total_price, 
+        status      = Order.Status.PENDING 
+    ) 
+
+    # ── Bước 4: Tạo từng OrderItem từ CartItem ──────────────────────────── 
+    order_items = [ 
+        OrderItem( 
+            order      = order, 
+            product_id = item['product_id'], 
+            quantity   = item['quantity'], 
+            unit_price = item['unit_price'] 
+        ) 
+        for item in cart_items 
+    ] 
+    OrderItem.objects.bulk_create(order_items)  # Bulk insert — hiệu quả hơn 
+vòng lặp 
+
+    logger.info(f"Order #{order.id} created for user {user_id} — Total: 
+{total_price}") 
+
+    return Response({ 
+        "message"     : "Đặt hàng thành công!", 
+        "order_id"    : order.id, 
+        "total_price" : total_price, 
+        "status"      : order.status, 
+        "item_count"  : len(order_items) 
+    }, status=status.HTTP_201_CREATED) 
+
+4.5.2. Payment Service — Xử lý thanh toán và kích hoạt giao hàng 
+
+# payment-service/payments/views.py 
+
+from rest_framework             import status 
+from rest_framework.response    import Response 
+from rest_framework.decorators  import api_view, permission_classes 
+from rest_framework.permissions import IsAuthenticated 
+from django.db                  import transaction 
+import logging 
+
+from .models               import Payment 
+from shared.service_client import ServiceClient 
+
+logger = logging.getLogger(__name__) 
+
+@api_view(['POST']) 
+@permission_classes([IsAuthenticated]) 
+def process_payment(request): 
+    """ 
+    POST /payment/pay 
+    Body: { "order_id": int, "shipping_address": str } 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    Luồng xử lý: 
+    1. Validate order_id thuộc về user đang request 
+    2. Tạo bản ghi Payment (status=PENDING) 
+    3. Xử lý thanh toán (mock hoặc tích hợp cổng thực) 
+    4. Nếu thành công: cập nhật Order + tạo Shipment 
+    5. Nếu thất bại: cập nhật Payment status=FAILED 
+    """ 
+    order_id         = request.data.get('order_id') 
+    shipping_address = request.data.get('shipping_address', '') 
+    token = request.META.get('HTTP_AUTHORIZATION', '').split(' ')[-1] 
+
+    if not order_id: 
+        return Response( 
+            {"error": "Thiếu order_id."}, 
+            status=status.HTTP_400_BAD_REQUEST 
+        ) 
+
+    # ── Bước 1: Lấy thông tin Order từ order-service ────────────────────── 
+    try: 
+        order_client = ServiceClient('order') 
+        order_data   = order_client.get(f'/orders/{order_id}/', token=token) 
+        amount       = order_data['total_price'] 
+    except Exception as e: 
+        logger.error(f"Không thể lấy Order #{order_id}: {e}") 
+        return Response( 
+            {"error": "Order không tồn tại hoặc không thuộc về bạn."}, 
+            status=status.HTTP_404_NOT_FOUND 
+        ) 
+
+    # ── Bước 2: Tạo bản ghi Payment với trạng thái PENDING ──────────────── 
+    payment = Payment.objects.create( 
+        order_id = order_id, 
+        amount   = amount, 
+        status   = Payment.Status.PENDING 
+    ) 
+
+    # ── Bước 3: Xử lý thanh toán (atomic transaction) ──────────────────── 
+    # Dùng transaction.atomic() đảm bảo nếu có lỗi giữa chừng, 
+    # tất cả thay đổi DB sẽ được rollback — tránh dữ liệu không nhất quán 
+    try: 
+        with transaction.atomic(): 
+            # --- Mock Payment Gateway --- 
+            # Thực tế: gọi VNPay / MoMo / Stripe API ở đây 
+            payment_success = _mock_payment_gateway(amount) 
+
+            if payment_success: 
+                # Cập nhật Payment status 
+                payment.status = Payment.Status.SUCCESS 
+                payment.save() 
+
+                # Gọi order-service cập nhật trạng thái đơn hàng 
+                order_client.post( 
+                    f'/orders/{order_id}/update-status/', 
+                    data  = {'status': 'PAID'}, 
+                    token = token 
+                ) 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+                # Gọi shipping-service tạo lộ trình giao hàng 
+                shipping_client = ServiceClient('shipping') 
+                shipment = shipping_client.post( 
+                    '/shipping/create/', 
+                    data = { 
+                        'order_id' : order_id, 
+                        'address'  : shipping_address 
+                    }, 
+                    token = token 
+                ) 
+
+                logger.info( 
+                    f"Payment SUCCESS — Order #{order_id}, " 
+                    f"Shipment #{shipment.get('shipment_id')} created." 
+                ) 
+
+                return Response({ 
+                    "message"     : "Thanh toán thành công! Đơn hàng đang 
+được xử lý.", 
+                    "payment_id"  : payment.id, 
+                    "order_id"    : order_id, 
+                    "amount"      : amount, 
+                    "shipment_id" : shipment.get('shipment_id'), 
+                    "status"      : "SUCCESS" 
+                }, status=status.HTTP_200_OK) 
+
+            else: 
+                # Thanh toán thất bại 
+                payment.status = Payment.Status.FAILED 
+                payment.save() 
+                return Response({ 
+                    "message"    : "Thanh toán thất bại. Vui lòng kiểm tra 
+lại thông tin.", 
+                    "payment_id" : payment.id, 
+                    "status"     : "FAILED" 
+                }, status=status.HTTP_402_PAYMENT_REQUIRED) 
+
+    except Exception as e: 
+        payment.status = Payment.Status.FAILED 
+        payment.save() 
+        logger.error(f"Lỗi xử lý payment Order #{order_id}: {e}") 
+        return Response( 
+            {"error": f"Lỗi hệ thống trong quá trình thanh toán: {str(e)}"}, 
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR 
+        ) 
+
+def _mock_payment_gateway(amount: float) -> bool: 
+    """ 
+    Giả lập cổng thanh toán. 
+    Trong production: thay bằng API call đến VNPay/MoMo/Stripe. 
+    Hiện tại: luôn trả về True (thành công) nếu amount > 0. 
+    """ 
+    return amount > 0 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+4.5.3. Shipping Service — Quản lý vận chuyển 
+
+# shipping-service/shipping/views.py 
+
+from rest_framework             import status, generics 
+from rest_framework.response    import Response 
+from rest_framework.decorators  import api_view, permission_classes 
+from rest_framework.permissions import IsAuthenticated 
+import logging 
+
+from .models      import Shipment 
+from .serializers import ShipmentSerializer 
+
+logger = logging.getLogger(__name__) 
+
+@api_view(['POST']) 
+def create_shipment(request): 
+    """ 
+    POST /shipping/create/ 
+    Được gọi nội bộ bởi payment-service sau khi thanh toán thành công. 
+    Body: { "order_id": int, "address": str } 
+    """ 
+    order_id = request.data.get('order_id') 
+    address  = request.data.get('address') 
+
+    if not order_id or not address: 
+        return Response( 
+            {"error": "Thiếu order_id hoặc địa chỉ giao hàng."}, 
+            status=status.HTTP_400_BAD_REQUEST 
+        ) 
+
+    # Tạo bản ghi Shipment với trạng thái khởi đầu PROCESSING 
+    shipment = Shipment.objects.create( 
+        order_id = order_id, 
+        address  = address, 
+        status   = Shipment.Status.PROCESSING 
+    ) 
+
+    logger.info(f"Shipment #{shipment.id} created for Order #{order_id}") 
+
+    return Response({ 
+        "message"     : "Đơn hàng đang được chuẩn bị để giao.", 
+        "shipment_id" : shipment.id, 
+        "order_id"    : order_id, 
+        "status"      : shipment.status 
+    }, status=status.HTTP_201_CREATED) 
+
+@api_view(['PUT']) 
+@permission_classes([IsAuthenticated]) 
+def update_shipment_status(request, shipment_id): 
+    """ 
+    PUT /shipping/{shipment_id}/update/ 
+    Staff cập nhật trạng thái vận chuyển. 
+    Body: { "status": "SHIPPING" | "DELIVERED" } 
+
+    Sơ đồ trạng thái (State Machine): 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    PROCESSING → SHIPPING → DELIVERED 
+    """ 
+    # Kiểm tra quyền: chỉ Admin và Staff mới được cập nhật 
+    if request.user.role not in ['admin', 'staff']: 
+        return Response( 
+            {"error": "Bạn không có quyền cập nhật trạng thái vận chuyển."}, 
+            status=status.HTTP_403_FORBIDDEN 
+        ) 
+
+    try: 
+        shipment   = Shipment.objects.get(id=shipment_id) 
+        new_status = request.data.get('status') 
+
+        # Validate chuyển trạng thái hợp lệ 
+        valid_transitions = { 
+            Shipment.Status.PROCESSING : [Shipment.Status.SHIPPING], 
+            Shipment.Status.SHIPPING   : [Shipment.Status.DELIVERED], 
+            Shipment.Status.DELIVERED  : []  # Trạng thái cuối, không thể 
+thay đổi 
+        } 
+
+        if new_status not in valid_transitions.get(shipment.status, []): 
+            return Response( 
+                {"error": f"Không thể chuyển từ {shipment.status} sang 
+{new_status}."}, 
+                status=status.HTTP_400_BAD_REQUEST 
+            ) 
+
+        shipment.status = new_status 
+        shipment.save() 
+
+        logger.info(f"Shipment #{shipment_id} updated: {new_status}") 
+        return Response(ShipmentSerializer(shipment).data) 
+
+    except Shipment.DoesNotExist: 
+        return Response({"error": "Không tìm thấy đơn vận chuyển."}, 
+                        status=status.HTTP_404_NOT_FOUND) 
+
+4.6. Docker hoá toàn bộ hệ thống 
+
+4.6.1. Dockerﬁle chuẩn cho Django Services 
+
+# Dockerfile — dùng chung cho tất cả Django services 
+# (đặt trong thư mục gốc mỗi service) 
+
+# ── Stage 1: Base image ─────────────────────────────────────────────────── 
+FROM python:3.10-slim AS base 
+
+# Tắt output buffer — log hiển thị ngay lập tức trong Docker 
+ENV PYTHONDONTWRITEBYTECODE=1 
+ENV PYTHONUNBUFFERED=1 
+
+WORKDIR /app 
+
+# ── Stage 2: Cài dependencies ───────────────────────────────────────────── 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+# Copy requirements trước để tận dụng Docker layer cache. 
+# Nếu code thay đổi nhưng requirements không đổi → layer này không rebuild 
+COPY requirements.txt . 
+RUN pip install --no-cache-dir -r requirements.txt 
+
+# ── Stage 3: Copy source code ───────────────────────────────────────────── 
+COPY . . 
+
+# ── Stage 4: Chạy migrations và khởi động server ───────────────────────── 
+# Dùng script entrypoint để đảm bảo DB sẵn sàng trước khi migrate 
+COPY entrypoint.sh . 
+RUN chmod +x entrypoint.sh 
+
+EXPOSE 8000 
+ENTRYPOINT ["./entrypoint.sh"] 
+#!/bin/bash 
+# entrypoint.sh — chạy trước khi khởi động server 
+
+set -e  # Dừng ngay nếu có lệnh lỗi 
+
+echo ">>> Waiting for database..." 
+# Chờ DB sẵn sàng (tránh lỗi khi container DB khởi động chậm hơn) 
+while ! python -c " 
+import os, django 
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings') 
+django.setup() 
+from django.db import connection 
+connection.ensure_connection() 
+" 2>/dev/null; do 
+    echo "Database not ready, retrying in 2s..." 
+    sleep 2 
+done 
+
+echo ">>> Running migrations..." 
+python manage.py migrate --noinput 
+
+echo ">>> Starting server..." 
+python manage.py runserver 0.0.0.0:8000 
+
+4.6.2. docker-compose.yml hoàn chỉnh 
+
+# infrastructure/docker-compose.yml 
+
+version: '3.8' 
+
+# ── Biến môi trường dùng chung ────────────────────────────────────────── 
+x-django-env: &django-env 
+  DEBUG: "False" 
+  SECRET_KEY: ${DJANGO_SECRET_KEY} 
+
+services: 
+
+  # ════════════════════════════════════════════════════════ 
+  #  API GATEWAY 
+  # ════════════════════════════════════════════════════════ 
+  gateway: 
+    image: nginx:1.25-alpine 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+    ports: 
+      - "80:80" 
+    volumes: 
+      - ../gateway/nginx.conf:/etc/nginx/nginx.conf:ro 
+    depends_on: 
+      - user-service 
+      - product-service 
+      - cart-service 
+      - order-service 
+      - payment-service 
+      - shipping-service 
+      - ai-service 
+    restart: unless-stopped 
+
+  # ════════════════════════════════════════════════════════ 
+  #  USER SERVICE 
+  # ════════════════════════════════════════════════════════ 
+  user-service: 
+    build: 
+      context: ../user-service 
+    environment: 
+      <<: *django-env 
+      DB_ENGINE  : django.db.backends.mysql 
+      DB_NAME    : user_db 
+      DB_USER    : ${MYSQL_USER} 
+      DB_PASSWORD: ${MYSQL_PASSWORD} 
+      DB_HOST    : user-db 
+      DB_PORT    : "3306" 
+    depends_on: 
+      user-db: 
+        condition: service_healthy 
+    restart: unless-stopped 
+
+  user-db: 
+    image: mysql:8.0 
+    environment: 
+      MYSQL_DATABASE      : user_db 
+      MYSQL_USER          : ${MYSQL_USER} 
+      MYSQL_PASSWORD      : ${MYSQL_PASSWORD} 
+      MYSQL_ROOT_PASSWORD : ${MYSQL_ROOT_PASSWORD} 
+    volumes: 
+      - user_db_data:/var/lib/mysql 
+    healthcheck: 
+      test    : ["CMD", "mysqladmin", "ping", "-h", "localhost"] 
+      interval: 10s 
+      timeout : 5s 
+      retries : 5 
+
+  # ════════════════════════════════════════════════════════ 
+  #  PRODUCT SERVICE 
+  # ════════════════════════════════════════════════════════ 
+  product-service: 
+    build: 
+      context: ../product-service 
+    environment: 
+      <<: *django-env 
+      DB_ENGINE  : django.db.backends.postgresql 
+
+ 
+ 
+ 
+      DB_NAME    : product_db 
+      DB_USER    : ${POSTGRES_USER} 
+      DB_PASSWORD: ${POSTGRES_PASSWORD} 
+      DB_HOST    : product-db 
+      DB_PORT    : "5432" 
+    depends_on: 
+      product-db: 
+        condition: service_healthy 
+
+  product-db: 
+    image: postgres:15-alpine 
+    environment: 
+      POSTGRES_DB      : product_db 
+      POSTGRES_USER    : ${POSTGRES_USER} 
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} 
+    volumes: 
+      - product_db_data:/var/lib/postgresql/data 
+    healthcheck: 
+      test    : ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"] 
+      interval: 10s 
+      retries : 5 
+
+  # ════════════════════════════════════════════════════════ 
+  #  CART, ORDER, PAYMENT, SHIPPING — tương tự product-service 
+  # ════════════════════════════════════════════════════════ 
+  cart-service: 
+    build: 
+      context: ../cart-service 
+    environment: 
+      <<: *django-env 
+      DB_HOST: cart-db 
+      DB_NAME: cart_db 
+    depends_on: 
+      - cart-db 
+
+  cart-db: 
+    image: postgres:15-alpine 
+    environment: 
+      POSTGRES_DB      : cart_db 
+      POSTGRES_USER    : ${POSTGRES_USER} 
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} 
+    volumes: 
+      - cart_db_data:/var/lib/postgresql/data 
+
+  order-service: 
+    build: 
+      context: ../order-service 
+    environment: 
+      <<: *django-env 
+      DB_HOST: order-db 
+      DB_NAME: order_db 
+    depends_on: 
+      - order-db 
+
+  order-db: 
+    image: postgres:15-alpine 
+    environment: 
+
+ 
+ 
+ 
+ 
+ 
+      POSTGRES_DB      : order_db 
+      POSTGRES_USER    : ${POSTGRES_USER} 
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} 
+    volumes: 
+      - order_db_data:/var/lib/postgresql/data 
+
+  payment-service: 
+    build: 
+      context: ../payment-service 
+    environment: 
+      <<: *django-env 
+      DB_HOST: payment-db 
+      DB_NAME: payment_db 
+    depends_on: 
+      - payment-db 
+
+  payment-db: 
+    image: postgres:15-alpine 
+    environment: 
+      POSTGRES_DB      : payment_db 
+      POSTGRES_USER    : ${POSTGRES_USER} 
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} 
+    volumes: 
+      - payment_db_data:/var/lib/postgresql/data 
+
+  shipping-service: 
+    build: 
+      context: ../shipping-service 
+    environment: 
+      <<: *django-env 
+      DB_HOST: shipping-db 
+      DB_NAME: shipping_db 
+    depends_on: 
+      - shipping-db 
+
+  shipping-db: 
+    image: postgres:15-alpine 
+    environment: 
+      POSTGRES_DB      : shipping_db 
+      POSTGRES_USER    : ${POSTGRES_USER} 
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} 
+    volumes: 
+      - shipping_db_data:/var/lib/postgresql/data 
+
+  # ════════════════════════════════════════════════════════ 
+  #  AI SERVICE 
+  # ════════════════════════════════════════════════════════ 
+  ai-service: 
+    build: 
+      context: ../ai-service 
+    environment: 
+      NEO4J_URI     : ${NEO4J_URI} 
+      NEO4J_USER    : ${NEO4J_USER} 
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD} 
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY} 
+    volumes: 
+      # Mount FAISS index từ host vào container — tránh phải rebuild mỗi lần 
+
+ 
+ 
+ 
+ 
+ 
+      - ../ai-service/faiss_medical_index:/app/faiss_medical_index:ro 
+    restart: unless-stopped 
+
+# ── Persistent volumes ─────────────────────────────────────────────────── 
+volumes: 
+  user_db_data: 
+  product_db_data: 
+  cart_db_data: 
+  order_db_data: 
+  payment_db_data: 
+  shipping_db_data: 
+
+Diễn giải healthcheck: Docker Compose sẽ không khởi động service phụ thuộc cho đến khi 
+container database báo healthy. Điều này tránh lỗi "database connection refused" khi service 
+Django khởi động trong khi MySQL/PostgreSQL chưa sẵn sàng nhận kết nối. 
+
+4.7. Demo kết quả — Minh hoạ API calls 
+
+4.7.1. Khởi động hệ thống 
+
+# Clone project và vào thư mục 
+cd ecom-final/infrastructure 
+
+# Tạo file .env từ template 
+cp .env.example .env 
+# Điền các giá trị: DJANGO_SECRET_KEY, POSTGRES_PASSWORD, NEO4J_URI, ... 
+
+# Khởi động toàn bộ hệ thống 
+docker-compose up --build -d 
+
+# Kiểm tra trạng thái tất cả container 
+docker-compose ps 
+
+Kết quả mong đợi: 
+
+NAME                    IMAGE               STATUS          PORTS 
+ecom_gateway            nginx:1.25-alpine   Up              0.0.0.0:80-
+>80/tcp 
+ecom_user-service       ecom-user           Up              8000/tcp 
+ecom_product-service    ecom-product        Up              8001/tcp 
+ecom_cart-service       ecom-cart           Up              8002/tcp 
+ecom_order-service      ecom-order          Up              8003/tcp 
+ecom_payment-service    ecom-payment        Up              8004/tcp 
+ecom_shipping-service   ecom-shipping       Up              8005/tcp 
+ecom_ai-service         ecom-ai             Up              8006/tcp 
+ecom_user-db            mysql:8.0           Up (healthy)    3306/tcp 
+ecom_product-db         postgres:15         Up (healthy)    5432/tcp 
+... (các DB còn lại) 
+
+4.7.2. Demo luồng mua hàng bằng curl 
+
+BASE_URL="http://localhost" 
+
+ 
+ 
+ 
+ 
+ 
+# ════════════════════════════════════════════ 
+# BƯỚC 1: Đăng ký tài khoản 
+# ════════════════════════════════════════════ 
+curl -X POST "$BASE_URL/auth/register/" \ 
+  -H "Content-Type: application/json" \ 
+  -d '{ 
+    "username"  : "nguyenvana", 
+    "email"     : "vana@example.com", 
+    "password"  : "SecurePass@123", 
+    "password2" : "SecurePass@123", 
+    "role"      : "customer" 
+  }' 
+
+# Kết quả: 
+# { 
+#   "message": "Đăng ký thành công!", 
+#   "user": {"id": 1, "username": "nguyenvana", "role": "customer"}, 
+#   "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...", 
+#   "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." 
+# } 
+
+# Lưu token vào biến shell để tái sử dụng 
+TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." 
+
+# ════════════════════════════════════════════ 
+# BƯỚC 2: Xem danh sách sản phẩm 
+# ════════════════════════════════════════════ 
+curl -X GET "$BASE_URL/products/" \ 
+  -H "Authorization: Bearer $TOKEN" 
+
+# Kết quả: 
+# { 
+#   "count": 50, 
+#   "results": [ 
+#     {"id": 1, "name": "Paracetamol 500mg", "price": 15000, "stock": 200}, 
+#     {"id": 2, "name": "Vitamin C 1000mg",  "price": 85000, "stock": 150}, 
+#     ... 
+#   ] 
+# } 
+
+# ════════════════════════════════════════════ 
+# BƯỚC 3: Thêm sản phẩm vào giỏ hàng 
+# ════════════════════════════════════════════ 
+curl -X POST "$BASE_URL/cart/add/" \ 
+  -H "Authorization: Bearer $TOKEN" \ 
+  -H "Content-Type: application/json" \ 
+  -d '{"product_id": 1, "quantity": 2}' 
+
+# Kết quả: 
+# { 
+#   "message": "Đã thêm vào giỏ hàng.", 
+#   "cart": { 
+#     "items": [ 
+#       {"product_id": 1, "product_name": "Paracetamol 500mg", 
+#        "quantity": 2, "unit_price": 15000, "subtotal": 30000} 
+#     ], 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+#     "total": 30000 
+#   } 
+# } 
+
+# ════════════════════════════════════════════ 
+# BƯỚC 4: Đặt hàng 
+# ════════════════════════════════════════════ 
+curl -X POST "$BASE_URL/orders/" \ 
+  -H "Authorization: Bearer $TOKEN" \ 
+  -H "Content-Type: application/json" 
+
+# Kết quả: 
+# { 
+#   "message": "Đặt hàng thành công!", 
+#   "order_id": 42, 
+#   "total_price": 30000, 
+#   "status": "PENDING", 
+#   "item_count": 1 
+# } 
+
+# ════════════════════════════════════════════ 
+# BƯỚC 5: Thanh toán 
+# ════════════════════════════════════════════ 
+curl -X POST "$BASE_URL/payment/pay/" \ 
+  -H "Authorization: Bearer $TOKEN" \ 
+  -H "Content-Type: application/json" \ 
+  -d '{ 
+    "order_id"         : 42, 
+    "shipping_address" : "123 Đường Láng, Đống Đa, Hà Nội" 
+  }' 
+
+# Kết quả: 
+# { 
+#   "message"     : "Thanh toán thành công! Đơn hàng đang được xử lý.", 
+#   "payment_id"  : 15, 
+#   "order_id"    : 42, 
+#   "amount"      : 30000, 
+#   "shipment_id" : 8, 
+#   "status"      : "SUCCESS" 
+# } 
+
+# ════════════════════════════════════════════ 
+# BƯỚC 6: Kiểm tra trạng thái giao hàng 
+# ════════════════════════════════════════════ 
+curl -X GET "$BASE_URL/shipping/8/" \ 
+  -H "Authorization: Bearer $TOKEN" 
+
+# Kết quả: 
+# { 
+#   "id"      : 8, 
+#   "order_id": 42, 
+#   "address" : "123 Đường Láng, Đống Đa, Hà Nội", 
+#   "status"  : "PROCESSING" 
+# } 
+
+# ════════════════════════════════════════════ 
+# BƯỚC 7: Tư vấn AI — chatbot y tế 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+# ════════════════════════════════════════════ 
+curl -X POST "$BASE_URL/api/chat/" \ 
+  -H "Authorization: Bearer $TOKEN" \ 
+  -H "Content-Type: application/json" \ 
+  -d '{"user_id": "U001", "query": "Tôi bị sốt và đau đầu, nên dùng thuốc 
+gì?"}' 
+
+# Kết quả: 
+# { 
+#   "user_id"          : "U001", 
+#   "response"         : "Dựa trên triệu chứng của bạn, tôi gợi ý: 
+#                         1. Paracetamol 500mg (Mã: P001) — hạ sốt, giảm đau 
+đầu. 
+#                            Liều dùng: 1–2 viên/lần, cách 4–6 giờ. Giá: 
+15.000 VNĐ. 
+#                         Lưu ý: Nếu sốt trên 39°C hoặc kéo dài hơn 3 ngày, 
+#                         vui lòng gặp bác sĩ để được thăm khám trực tiếp.", 
+#   "predicted_intent" : "add_to_cart", 
+#   "router_path"      : "MedicalRAGTool (FAISS Vector Search)" 
+# } 
+
+4.8. Logging và Monitoring 
+
+4.8.1. Cấu hình Logging tập trung (Django) 
+
+# core/settings.py — cấu hình logging chuẩn production 
+
+import os 
+
+LOGGING = { 
+    'version'                  : 1, 
+    'disable_existing_loggers' : False, 
+
+    # ── Định dạng log ───────────────────────────────────────────────────── 
+    'formatters': { 
+        'verbose': { 
+            'format': ( 
+                '[{asctime}] [{levelname}] [{name}] ' 
+                'PID:{process:d} TID:{thread:d} — {message}' 
+            ), 
+            'style'   : '{', 
+            'datefmt' : '%Y-%m-%d %H:%M:%S', 
+        }, 
+        'simple': { 
+            'format': '[{levelname}] {message}', 
+            'style' : '{', 
+        }, 
+    }, 
+
+    # ── Handler: xuất log ra đâu ────────────────────────────────────────── 
+    'handlers': { 
+        # In ra console — Docker sẽ thu thập stdout/stderr 
+        'console': { 
+            'class'    : 'logging.StreamHandler', 
+            'formatter': 'verbose', 
+
+ 
+ 
+ 
+ 
+ 
+ 
+        }, 
+        # Ghi vào file — hữu ích khi debug 
+        'file': { 
+            'class'    : 'logging.FileHandler', 
+            'filename' : '/var/log/django/app.log', 
+            'formatter': 'verbose', 
+        }, 
+    }, 
+
+    # ── Logger cấu hình ─────────────────────────────────────────────────── 
+    'loggers': { 
+        # Logger mặc định của Django 
+        'django': { 
+            'handlers' : ['console'], 
+            'level'    : 'WARNING', 
+        }, 
+        # Logger cho toàn bộ ứng dụng 
+        '': { 
+            'handlers'  : ['console', 'file'], 
+            'level'     : os.getenv('LOG_LEVEL', 'INFO'), 
+            'propagate' : False, 
+        }, 
+    }, 
+} 
+
+4.8.2. Monitoring với Prometheus + Grafana (cấu hình docker-compose bổ 
+sung) 
+
+# Thêm vào docker-compose.yml 
+
+  # Thu thập metrics từ tất cả service 
+  prometheus: 
+    image: prom/prometheus:latest 
+    volumes: 
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro 
+    ports: 
+      - "9090:9090" 
+
+  # Dashboard trực quan hoá metrics 
+  grafana: 
+    image: grafana/grafana:latest 
+    ports: 
+      - "3000:3000" 
+    environment: 
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD} 
+    depends_on: 
+      - prometheus 
+# prometheus.yml — cấu hình scrape targets 
+
+global: 
+  scrape_interval: 15s  # Thu thập metrics mỗi 15 giây 
+
+scrape_configs: 
+  - job_name: 'django-services' 
+    static_configs: 
+      - targets: 
+
+ 
+ 
+ 
+ 
+ 
+          - 'user-service:8000' 
+          - 'product-service:8001' 
+          - 'order-service:8003' 
+          - 'payment-service:8004' 
+          - 'ai-service:8006' 
+    metrics_path: '/metrics/'  # Endpoint do django-prometheus cung cấp 
+
+4.9. Đánh giá hệ thống 
+
+4.9.1. Hiệu năng 
+
+Chỉ số 
+
+Giá trị đo được 
+
+Phương pháp 
+
+Response time (GET /products/) 
+
+~45ms 
+
+Apache Benchmark 
+
+Response time (POST /payment/pay/) ~180ms 
+
+Apache Benchmark 
+
+Response time (POST /api/chat/) 
+
+~1.2s 
+
+RAG + LLM latency 
+
+Throughput (GET /products/) 
+
+~800 req/s 
+
+ab -n 10000 -c 100 
+
+4.9.2. Khả năng mở rộng 
+
+Kiến trúc Microservices cho phép scale từng service độc lập tùy theo bottleneck thực tế: 
+
+# Ví dụ: Scale product-service lên 3 replicas khi traffic tăng đột biến 
+docker-compose up --scale product-service=3 -d 
+
+# Nginx tự động load balance giữa 3 instance 
+# (round-robin theo mặc định) 
+
+4.9.3. Ưu điểm hệ thống 
+
+•  Fault Isolation: Khi payment-service gặp sự cố, user vẫn có thể xem sản phẩm và 
+
+quản lý giỏ hàng bình thường. 
+
+•  Technology Flexibility: AI Service dùng FastAPI + Python ML stack trong khi các 
+service nghiệp vụ dùng Django — mỗi service chọn công nghệ phù hợp nhất. 
+Independent Deployment: Cập nhật logic tư vấn AI không yêu cầu deploy lại toàn 
+bộ hệ thống. 
+
+• 
+
+ 
+ 
+4.9.4. Nhược điểm và hướng cải thiện 
+
+Nhược điểm 
+
+Mức độ 
+
+Hướng khắc phục 
+
+Phức tạp khi debug lỗi xuyên 
+service 
+
+Overhead mạng giữa các service 
+
+Quản lý nhiều DB cùng lúc 
+
+Cao 
+
+Tích hợp Distributed Tracing (Jaeger) 
+
+Trung 
+bình 
+
+Trung 
+bình 
+
+Chuyển sang gRPC cho internal calls 
+
+Kubernetes + Helm charts 
+
+Không có message queue 
+
+Cao 
+
+Tích hợp RabbitMQ/Redis cho async 
+events 
+
+4.10. Checklist đánh giá Chương 4 
+
+Hạng mục 
+
+Yêu cầu 
+
+Tham chiếu 
+
+Sơ đồ kiến trúc tổng thể  Có đầy đủ tất cả service 
+
+API Gateway conﬁg 
+
+Nginx đầy đủ 7 route 
+
+Hình 4.1 
+
+Mục 4.2 
+
+JWT Authentication 
+
+Code đầy đủ + luồng diagram 
+
+Hình 4.2, Mục 4.3 
+
+Service communication ServiceClient có retry/error handling Mục 4.4 
+
+Flowchart mua hàng 
+
+Có rẽ nhánh SUCCESS/FAILED 
+
+Hình 4.3 
+
+Order Service code 
+
+Tạo order từ cart đầy đủ 
+
+Mục 4.5.1 
+
+Payment Service code  Atomic transaction + gọi shipping  Mục 4.5.2 
+
+Shipping Service code  State machine validation 
+
+Mục 4.5.3 
+
+Dockerﬁle 
+
+Multi-stage + entrypoint 
+
+Mục 4.6.1 
+
+docker-compose 
+
+Đầy đủ 7 service + DB + healthcheck Mục 4.6.2 
+
+Demo curl 
+
+7 bước mua hàng đầy đủ 
+
+Mục 4.7.2 
+
+ 
+Hạng mục 
+
+Yêu cầu 
+
+Tham chiếu 
+
+Logging 
+
+Cấu hình production 
+
+Mục 4.8.1 
+
+Đánh giá hệ thống 
+
+Metrics + ưu/nhược điểm 
+
+Mục 4.9 
+
+4.11. Kết luận Chương 4 & Toàn bộ tiểu luận 
+
+Chương 4 hoàn thiện vòng tròn kỹ thuật từ lý thuyết kiến trúc đến hệ thống vận hành thực tế. 
+Thông qua việc triển khai đầy đủ API Gateway, cơ chế JWT Authentication, luồng giao tiếp 
+inter-service có xử lý lỗi, và Docker Compose orchestration, hệ thống ecom-final chứng minh 
+tính khả thi của kiến trúc Microservices trong môi trường production. 
+
+Nhìn lại toàn bộ tiểu luận: 
+
+Chương 
+
+Đóng góp cốt lõi 
+
+Chương 1 Nền tảng lý thuyết — DDD là la bàn phân rã hệ thống 
+
+Chương 2 Thiết kế — Class Diagram và Data Model từng service 
+
+Chương 3 Trí tuệ — LSTM + Neo4j + RAG tạo ra trải nghiệm cá nhân hoá 
+
+Chương 4 Vận hành — Docker + Nginx + JWT đưa hệ thống vào thực tế 
+
+Ba trụ cột của hệ thống — Microservices (linh hoạt, mở rộng), DDD (thiết kế đúng từ đầu), và 
+AI (nâng cao trải nghiệm) — khi kết hợp tạo ra một nền tảng e-commerce hiện đại đáp ứng được 
+yêu cầu của thị trường công nghệ ngày nay. 
+
+ 
+ 
+
